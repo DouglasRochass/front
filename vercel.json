@@ -1,0 +1,22 @@
+{
+  "public": true,
+  "buildCommand": "echo 'Static site'",
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/js/pages/(.*).html",
+      "destination": "/js/pages/$1.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    }
+  ]
+}
