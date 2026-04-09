@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste de Fetch - SmarStock API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    .test-container {
+      background-color: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .result {
+      background-color: #f9f9f9;
+      padding: 10px;
+      margin: 10px 0;
+      border-left: 4px solid #007bff;
+      border-radius: 4px;
+      font-family: monospace;
+      max-height: 300px;
+      overflow-y: auto;
+      word-break: break-all;
+    }
+    .success {
+      border-left-color: #28a745;
+    }
+    .error {
+      border-left-color: #dc3545;
+    }
+    .warning {
+      border-left-color: #ffc107;
+    }
+    .input-group {
+      margin: 10px 0;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Teste de Fetch - SmarStock API</h1>
+  
+  <div class="test-container">
+    <h2>Configuração da API</h2>
+    <div class="input-group">
+      <label>Base URL:</label>
+      <input type="text" id="baseUrl" value="http://localhost:8080/api" />
+    </div>
+    <div class="result warning" id="config-status">
+      Status: Aguardando testes...
+    </div>
+  </div>
+
+  <div class="test-container">
+    <h2>Testes de Endpoints</h2>
+    
+    <h3>1. Health Check</h3>
+    <button onclick="testarHealthCheck()">Testar /health</button>
+    <div class="result" id="health-result"></div>
+
+    <h3>2. Login</h3>
+    <div class="input-group">
+      <input type="text" id="login-email" placeholder="Email" value="teste@example.com" />
+      <input type="password" id="login-senha" placeholder="Senha" value="senha123" />
+    </div>
+    <button onclick="testarLogin()">Testar POST /login</button>
+    <div class="result" id="login-result"></div>
+
+    <h3>3. Recuperar Senha</h3>
+    <div class="input-group">
+      <input type="email" id="recuperar-email" placeholder="Email" value="teste@example.com" />
+    </div>
+    <button onclick="testarRecuperarSenha()">Testar POST /recuperar-senha</button>
+    <div class="result" id="recuperar-result"></div>
+
+    <h3>4. Verificar Email</h3>
+    <div class="input-group">
+      <input type="text" id="verificar-email" placeholder="Email" value="teste@example.com" />
+    </div>
+    <button onclick="testarVerificarEmail()">Testar POST /verificar-email</button>
+    <div class="result" id="verificar-result"></div>
+
+    <h3>5. Redefinir Senha</h3>
+    <div class="input-group">
+      <input type="text" id="redefinir-token" placeholder="Token" value="token_teste" />
+      <input type="password" id="redefinir-nova-senha" placeholder="Nova Senha" value="novaSenha123" />
+      <input type="password" id="redefinir-confirma-senha" placeholder="Confirmação Senha" value="novaSenha123" />
+    </div>
+    <button onclick="testarRedefinirSenha()">Testar POST /redefinir-senha</button>
+    <div class="result" id="redefinir-result"></div>
+
+    <h3>6. Listar Usuários</h3>
+    <button onclick="testarListarUsuarios()">Testar GET /usuarios</button>
+    <div class="result" id="usuarios-result"></div>
+
+    <h3>7. Listar Produtos</h3>
+    <button onclick="testarListarProdutos()">Testar GET /produtos</button>
+    <div class="result" id="produtos-result"></div>
+  </div>
+
+  <script>
+    // Configuração da API (copiado de api-config.js)
+    const API_CONFIG = {
+      BASE_URL: 'http://localhost:8080/api',
+      ENDPOINTS: {
+        HEALTH: '/health',
+        INFO: '/info',
+        LOGIN: '/login',
+        LOGOUT: '/logout',
+        RECUPERAR_SENHA: '/recuperar-senha',
+        RECUPERAR_EMAIL: '/recuperar-email',
+        VERIFICAR_EMAIL: '/verificar-email',
+        REDEFINIR_SENHA: '/redefinir-senha',
+        USUARIOS: '/usuarios',
+        USUARIOS_EMAIL: '/usuarios/email',
+        PRODUTOS: '/produtos',
+        PRODUTOS_CATEGORIA: '/produtos/categoria',
+        PRODUTOS_FORNECEDOR: '/produtos/fornecedor',
+        FORNECEDORES: '/fornecedores',
+        FORNECEDORES_NOME: '/fornecedores/nome',
+        FORNECEDORES_EMAIL: '/fornecedores/email',
+        MERCADOS: '/mercados',
+        MERCADOS_NOME: '/mercados/nome',
+        IMPORTACAO_CSV: '/importacao/csv',
+        IMPORTACAO_EXCEL: '/importacao/excel',
+      },
+      TIMEOUT: 30000,
+      RETRY: {
+        MAX_TENTATIVAS: 3,
+        DELAY: 1000
+      },
+      HEADERS: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    };
+
+    function getFullUrl(endpoint) {
+      return API_CONFIG.BASE_URL + endpoint;
+    }
+
+    class SimpleAPIService {
+      constructor() {
+        this.token = this.recuperarToken();
+      }
+
+      recuperarToken() {
+        return localStorage.getItem('auth_token') || null;
+      }
+
+      armazenarToken(token) {
+        this.token = token;
+        localStorage.setItem('auth_token', token);
+      }
+
+      prepararHeaders() {
+        const headers = { ...API_CONFIG.HEADERS };
+        if (this.token) {
+          headers['Authorization'] = `Bearer ${this.token}`;
+        }
+        return headers;
+      }
+
+      async requisicao(endpoint, opcoes = {}) {
+        const url = getFullUrl(endpoint);
+        
+        const headers = {
+          ...this.prepararHeaders(),
+          ...(opcoes.headers || {})
+        };
+        
+        const { headers: _, ...outrasOpcoes } = opcoes;
+        
+        const config = {
+          headers,
+          timeout: API_CONFIG.TIMEOUT,
+          ...outrasOpcoes
+        };
+
+        try {
+          const response = await fetch(url, config);
+
+          if (response.status === 401) {
+            this.removerToken();
+            throw new Error('Sessão expirada. Faça login novamente.');
+          }
+
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            const erro = new Error(data.message || `Erro HTTP ${response.status}`);
+            erro.status = response.status;
+            erro.dados = data;
+            throw erro;
+          }
+
+          return data;
+        } catch (erro) {
+          console.error('Erro na requisição:', erro);
+          return {
+            sucesso: false,
+            mensagem: erro.message || 'Erro ao conectar com a API',
+            status: erro.status || 0,
+            dados: erro.dados || null
+          };
+        }
+      }
+
+      async login(email, senha) {
+        const resposta = await this.requisicao(API_CONFIG.ENDPOINTS.LOGIN, {
+          method: 'POST',
+          body: JSON.stringify({ email, senha })
+        });
+
+        if (resposta.token && resposta.sucesso !== false) {
+          this.armazenarToken(resposta.token);
+        }
+
+        return resposta;
+      }
+
+      async recuperarSenha(email) {
+        return await this.requisicao(API_CONFIG.ENDPOINTS.RECUPERAR_SENHA, {
+          method: 'POST',
+          body: JSON.stringify({ email })
+        });
+      }
+
+      async verificarEmail(email) {
+        return await this.requisicao(API_CONFIG.ENDPOINTS.VERIFICAR_EMAIL, {
+          method: 'POST',
+          body: JSON.stringify({ email })
+        });
+      }
+
+      async redefinirSenha(token, novaSenha, confirmacaoSenha) {
+        return await this.requisicao(API_CONFIG.ENDPOINTS.REDEFINIR_SENHA, {
+          method: 'POST',
+          body: JSON.stringify({
+            token,
+            novaSenha,
+            confirmacaoSenha
+          })
+        });
+      }
+
+      async obterUsuarios() {
+        return await this.requisicao(API_CONFIG.ENDPOINTS.USUARIOS, {
+          method: 'GET'
+        });
+      }
+
+      async obterProdutos() {
+        return await this.requisicao(API_CONFIG.ENDPOINTS.PRODUTOS, {
+          method: 'GET'
+        });
+      }
+
+      removerToken() {
+        this.token = null;
+        localStorage.removeItem('auth_token');
+      }
+    }
+
+    const apiService = new SimpleAPIService();
+    window.apiService = apiService;
+
+    // Funções de teste
+    window.testarHealthCheck = async function() {
+      const resultado = document.getElementById('health-result');
+      try {
+        resultado.textContent = 'Testando...';
+        resultado.className = 'result';
+        
+        const response = await fetch(document.getElementById('baseUrl').value + '/health');
+        const data = await response.json();
+        
+        resultado.textContent = JSON.stringify(data, null, 2);
+        resultado.className = response.ok ? 'result success' : 'result error';
+      } catch (erro) {
+        resultado.textContent = `Erro: ${erro.message}`;
+        resultado.className = 'result error';
+      }
+    };
+
+    window.testarLogin = async function() {
+      const resultado = document.getElementById('login-result');
+      try {
+        resultado.textContent = 'Testando...';
+        resultado.className = 'result';
+        
+        const email = document.getElementById('login-email').value;
+        const senha = document.getElementById('login-senha').value;
+        const data = await apiService.login(email, senha);
+        
+        resultado.textContent = JSON.stringify(data, null, 2);
+        resultado.className = data.sucesso !== false ? 'result success' : 'result error';
+      } catch (erro) {
+        resultado.textContent = `Erro: ${erro.message}`;
+        resultado.className = 'result error';
+      }
+    };
+
+    window.testarRecuperarSenha = async function() {
+      const resultado = document.getElementById('recuperar-result');
+      try {
+        resultado.textContent = 'Testando...';
+        resultado.className = 'result';
+        
+        const email = document.getElementById('recuperar-email').value;
+        const data = await apiService.recuperarSenha(email);
+        
+        resultado.textContent = JSON.stringify(data, null, 2);
+        resultado.className = data.sucesso !== false ? 'result success' : 'result error';
+      } catch (erro) {
+        resultado.textContent = `Erro: ${erro.message}`;
+        resultado.className = 'result error';
+      }
+    };
+
+    window.testarVerificarEmail = async function() {
+      const resultado = document.getElementById('verificar-result');
+      try {
+        resultado.textContent = 'Testando...';
+        resultado.className = 'result';
+        
+        const email = document.getElementById('verificar-email').value;
+        const data = await apiService.verificarEmail(email);
+        
+        resultado.textContent = JSON.stringify(data, null, 2);
+        resultado.className = data.sucesso !== false ? 'result success' : 'result error';
+      } catch (erro) {
+        resultado.textContent = `Erro: ${erro.message}`;
+        resultado.className = 'result error';
+      }
+    };
+
+    window.testarRedefinirSenha = async function() {
+      const resultado = document.getElementById('redefinir-result');
+      try {
+        resultado.textContent = 'Testando...';
+        resultado.className = 'result';
+        
+        const token = document.getElementById('redefinir-token').value;
+        const novaSenha = document.getElementById('redefinir-nova-senha').value;
+        const confirmacaoSenha = document.getElementById('redefinir-confirma-senha').value;
+        const data = await apiService.redefinirSenha(token, novaSenha, confirmacaoSenha);
+        
+        resultado.textContent = JSON.stringify(data, null, 2);
+        resultado.className = data.sucesso !== false ? 'result success' : 'result error';
+      } catch (erro) {
+        resultado.textContent = `Erro: ${erro.message}`;
+        resultado.className = 'result error';
+      }
+    };
+
+    window.testarListarUsuarios = async function() {
+      const resultado = document.getElementById('usuarios-result');
+      try {
+        resultado.textContent = 'Testando...';
+        resultado.className = 'result';
+        
+        const data = await apiService.obterUsuarios();
+        
+        resultado.textContent = JSON.stringify(data, null, 2);
+        resultado.className = data.sucesso !== false ? 'result success' : 'result error';
+      } catch (erro) {
+        resultado.textContent = `Erro: ${erro.message}`;
+        resultado.className = 'result error';
+      }
+    };
+
+    window.testarListarProdutos = async function() {
+      const resultado = document.getElementById('produtos-result');
+      try {
+        resultado.textContent = 'Testando...';
+        resultado.className = 'result';
+        
+        const data = await apiService.obterProdutos();
+        
+        resultado.textContent = JSON.stringify(data, null, 2);
+        resultado.className = data.sucesso !== false ? 'result success' : 'result error';
+      } catch (erro) {
+        resultado.textContent = `Erro: ${erro.message}`;
+        resultado.className = 'result error';
+      }
+    };
+
+    // Inicializa
+    const configStatus = document.getElementById('config-status');
+    configStatus.textContent = '✓ API Service carregado com sucesso!\n' +
+      'Base URL: ' + document.getElementById('baseUrl').value + '\n' +
+      'Endpoints disponíveis para teste acima.';
+    configStatus.className = 'result success';
+  </script>
+</body>
+</html>
