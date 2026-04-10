@@ -2,19 +2,35 @@
   "public": true,
   "buildCommand": "echo 'Static site'",
   "outputDirectory": ".",
+  "cleanUrls": false,
   "rewrites": [
     {
-      "source": "/js/pages/(.*).html",
-      "destination": "/js/pages/$1.html"
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/(.*)",
+      "source": "/js/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/style/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
         }
       ]
     }
