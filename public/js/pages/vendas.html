@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendas - SmartStock</title>
+  <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
+    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
+    <a href="./fornecedores.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Fornecedores</a>
+    <a href="./funcionarios.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Funcionários</a>
+    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
+    <a href="./vendas.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Vendas</a>
+    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
+    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
+  </div>
+
+  <div style="padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl);">
+      <h1 style="font-size: 1.875rem;">Vendas</h1>
+      <button class="btn btn-primary" id="nova-venda-btn">+ Nova Venda</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-2xl);">
+      <div style="background: white; padding: var(--spacing-lg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+        <h3 style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: var(--spacing-md);">Total de Vendas</h3>
+        <div style="font-size: 2rem; font-weight: bold; color: var(--primary);" id="total-vendas">0</div>
+      </div>
+      <div style="background: white; padding: var(--spacing-lg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+        <h3 style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: var(--spacing-md);">Faturamento</h3>
+        <div style="font-size: 2rem; font-weight: bold; color: var(--success);" id="faturamento-total">R$ 0,00</div>
+      </div>
+      <div style="background: white; padding: var(--spacing-lg); border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+        <h3 style="color: var(--gray-600); font-size: 0.875rem; margin-bottom: var(--spacing-md);">Ticket Médio</h3>
+        <div style="font-size: 2rem; font-weight: bold; color: var(--info);" id="ticket-medio">R$ 0,00</div>
+      </div>
+    </div>
+
+    <div style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden;">
+      <div id="vendas-table"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import Navbar from '../components/Navbar.js';
+    import AuthService from '../services/AuthService.js';
+    import Toast from '../components/Toast.js';
+
+    if (!AuthService.isAuthenticated()) {
+      window.location.href = './login.html';
+    }
+
+    const navbar = new Navbar();
+    navbar.render();
+
+    // Simular dados
+    const mockVendas = [
+      { id: 1, data: '2024-04-09', total: 150.50, itens: 3, mercado: 'Mercado 1', status: 'Concluída' },
+      { id: 2, data: '2024-04-08', total: 280.25, itens: 5, mercado: 'Mercado 2', status: 'Concluída' },
+      { id: 3, data: '2024-04-07', total: 450.00, itens: 7, mercado: 'Mercado 1', status: 'Concluída' },
+    ];
+
+    const totalVendas = mockVendas.length;
+    const faturamento = mockVendas.reduce((acc, v) => acc + v.total, 0);
+    const ticketMedio = faturamento / totalVendas;
+
+    document.getElementById('total-vendas').textContent = totalVendas;
+    document.getElementById('faturamento-total').textContent = `R$ ${faturamento.toFixed(2)}`;
+    document.getElementById('ticket-medio').textContent = `R$ ${ticketMedio.toFixed(2)}`;
+
+    Toast.success('Vendas carregadas com sucesso');
+  </script>
+</body>
+</html>

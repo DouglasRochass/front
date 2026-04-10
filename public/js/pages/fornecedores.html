@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fornecedores - SmartStock</title>
+  <link rel="stylesheet" href="../styles/main.css">
+  <style>
+    .page-container {
+      padding: var(--spacing-lg);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .page-header h1 {
+      font-size: 1.875rem;
+    }
+
+    .table-wrapper {
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .table-controls {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      gap: var(--spacing-md);
+    }
+
+    .search-input {
+      flex: 1;
+      max-width: 300px;
+      padding: 0.625rem;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-md);
+    }
+  </style>
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
+    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
+    <a href="./fornecedores.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Fornecedores</a>
+    <a href="./funcionarios.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Funcionários</a>
+    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
+    <a href="./vendas.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Vendas</a>
+    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
+    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
+  </div>
+
+  <div class="page-container">
+    <div class="page-header">
+      <h1>Fornecedores</h1>
+      <button class="btn btn-primary" id="novo-fornecedor-btn">+ Novo Fornecedor</button>
+    </div>
+
+    <div class="table-wrapper">
+      <div id="fornecedores-table"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import Navbar from '../components/Navbar.js';
+    import AuthService from '../services/AuthService.js';
+    import FornecedorService from '../services/FornecedorService.js';
+    import DataTable from '../components/DataTable.js';
+    import Modal from '../components/Modal.js';
+    import FormBuilder from '../components/FormBuilder.js';
+    import Toast from '../components/Toast.js';
+
+    if (!AuthService.isAuthenticated()) {
+      window.location.href = './login.html';
+    }
+
+    const navbar = new Navbar();
+    navbar.render();
+
+    let table = null;
+
+    async function loadFornecedores() {
+      const result = await FornecedorService.listar();
+      
+      if (result.success) {
+        table = new DataTable({
+          containerId: 'fornecedores-table',
+          columns: [
+            { label: 'Nome', field: 'nome' },
+            { label: 'CNPJ', field: 'cnpj' },
+            { label: 'Email', field: 'email' },
+            { label: 'Telefone', field: 'telefone' },
+            { label: 'Cidade', field: 'cidade' },
+          ],
+          data: result.data || [],
+          onEdit: editFornecedor,
+          onDelete: deleteFornecedor,
+          onView: viewFornecedor,
+          pageSize: 10,
+        });
+
+        table.render();
+        table.addActionListeners();
+      } else {
+        Toast.error('Erro ao carregar fornecedores');
+      }
+    }
+
+    async function editFornecedor(id) {
+      const result = await FornecedorService.obter(id);
+      if (result.success) {
+        showFormModal('Editar Fornecedor', result.data, true);
+      }
+    }
+
+    async function deleteFornecedor(id) {
+      if (confirm('Tem certeza que deseja deletar este fornecedor?')) {
+        const result = await FornecedorService.deletar(id);
+        if (result.success) {
+          Toast.success(result.message);
+          loadFornecedores();
+        } else {
+          Toast.error(result.message);
+        }
+      }
+    }
+
+    function viewFornecedor(id) {
+      Toast.info(`Visualizando fornecedor ${id}`);
+    }
+
+    function showFormModal(title, data = null, isEdit = false) {
+      try {
+        const form = new FormBuilder({
+          formId: 'fornecedor-form',
+          title,
+          fields: [
+            { name: 'nome', label: 'Nome', type: 'text', required: true, value: data?.nome || '' },
+            { name: 'cnpj', label: 'CNPJ', type: 'text', required: true, value: data?.cnpj || '' },
+            { name: 'email', label: 'Email', type: 'email', required: true, value: data?.email || '' },
+            { name: 'telefone', label: 'Telefone', type: 'tel', required: true, value: data?.telefone || '' },
+            { name: 'endereco', label: 'Endereço', type: 'text', value: data?.endereco || '' },
+            { name: 'cidade', label: 'Cidade', type: 'text', value: data?.cidade || '' },
+            { name: 'estado', label: 'Estado', type: 'text', value: data?.estado || '' },
+            { name: 'cep', label: 'CEP', type: 'text', value: data?.cep || '' },
+          ],
+          submitText: isEdit ? 'Atualizar' : 'Criar',
+          onSubmit: async (formData) => {
+            try {
+              let result;
+              if (isEdit) {
+                result = await FornecedorService.atualizar(data.id, formData);
+              } else {
+                result = await FornecedorService.criar(formData);
+              }
+
+              if (result.success) {
+                Toast.success(result.message);
+                modal.close();
+                loadFornecedores();
+              } else {
+                Toast.error(result.message);
+              }
+            } catch (error) {
+              console.error('[showFormModal] Erro ao salvar:', error);
+              Toast.error('Erro ao salvar fornecedor');
+            }
+          },
+        });
+
+        const modal = new Modal({ title, size: 'lg' });
+        modal.open();
+
+        setTimeout(() => {
+          const modalBody = modal.modal?.querySelector('.modal-body');
+          if (modalBody) {
+            form.render(modalBody);
+          } else {
+            console.error('[showFormModal] Modal body não encontrado');
+            Toast.error('Erro ao abrir formulário');
+          }
+        }, 100);
+      } catch (error) {
+        console.error('[showFormModal] Erro:', error);
+        Toast.error('Erro ao abrir formulário');
+      }
+    }
+
+    const btnNovoFornecedor = document.getElementById('novo-fornecedor-btn');
+    if (btnNovoFornecedor) {
+      btnNovoFornecedor.addEventListener('click', () => {
+        console.log('[Fornecedores] Botão "Novo Fornecedor" clicado');
+        showFormModal('Novo Fornecedor', null, false);
+      });
+    } else {
+      console.error('[Fornecedores] Botão "Novo Fornecedor" não encontrado');
+    }
+
+    loadFornecedores();
+  </script>
+</body>
+</html>
