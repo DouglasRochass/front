@@ -1,3 +1,5 @@
 {
-  "trailingSlash": false
+  "public": true,
+  "buildCommand": "echo 'Static site'",
+  "outputDirectory": "."
 }

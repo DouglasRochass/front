@@ -1,0 +1,11 @@
+{
+  "name": "smartestok-frontend",
+  "version": "1.0.0",
+  "description": "Frontend do SmartStock",
+  "scripts": {
+    "start": "echo 'Static site - no server needed'"
+  },
+  "keywords": ["smartstock", "frontend"],
+  "author": "",
+  "license": "MIT"
+}
