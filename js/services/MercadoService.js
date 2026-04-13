@@ -9,7 +9,9 @@ class MercadoService {
   async listar(filtros = {}) {
     try {
       const response = await APIService.get(APIConfig.ENDPOINTS.MERCADOS.LIST, filtros);
-      console.log('[MercadoService.listar] Response:', response);
+      console.log('[MercadoService.listar] Response completo:', response);
+      console.log('[MercadoService.listar] Tipo:', typeof response);
+      console.log('[MercadoService.listar] É Array?', Array.isArray(response));
       
       let mercados = Array.isArray(response) ? response : 
                     response.data && Array.isArray(response.data) ? response.data :

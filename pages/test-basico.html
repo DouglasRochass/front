@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste Básico</title>
+  <style>
+    body {
+      font-family: Arial;
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test { background: white; padding: 20px; margin: 20px 0; border-radius: 4px; }
+    button { background: #3B82F6; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+    button:hover { background: #2563EB; }
+    .output { background: #f9f9f9; padding: 15px; margin-top: 10px; border-left: 4px solid #3B82F6; font-family: monospace; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Teste Básico</h1>
+
+  <div class="test">
+    <button onclick="teste1()">Teste 1: Conexão</button>
+    <div id="out1" class="output" style="display:none;"></div>
+  </div>
+
+  <script>
+    function teste1() {
+      document.getElementById('out1').style.display = 'block';
+      document.getElementById('out1').textContent = 'Testando...';
+      
+      fetch('http://localhost:8080/api/health')
+        .then(r => {
+          document.getElementById('out1').textContent = 'Status: ' + r.status;
+        })
+        .catch(e => {
+          document.getElementById('out1').textContent = 'Erro: ' + e.message;
+        });
+    }
+  </script>
+</body>
+</html>

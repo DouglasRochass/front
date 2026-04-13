@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mercados - SmartStock</title>
+  <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
+    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
+    <a href="./fornecedores.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Fornecedores</a>
+    <a href="./funcionarios.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Funcionários</a>
+    <a href="./mercados.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Mercados</a>
+    <a href="./vendas.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Vendas</a>
+    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
+    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
+  </div>
+
+  <div style="padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl);">
+      <h1 style="font-size: 1.875rem;">Mercados</h1>
+      <button class="btn btn-primary" id="novo-mercado-btn">+ Novo Mercado</button>
+    </div>
+
+    <div style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden;">
+      <div id="mercados-table"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import Navbar from '../js/components/Navbar.js';
+    import AuthService from '../js/services/AuthService.js';
+    import MercadoService from '../js/services/MercadoService.js';
+    import DataTable from '../js/components/DataTable.js';
+    import Modal from '../js/components/Modal.js';
+    import FormBuilder from '../js/components/FormBuilder.js';
+    import Toast from '../js/components/Toast.js';
+
+    if (!AuthService.isAuthenticated() || !AuthService.isMaster()) {
+      Toast.error('Acesso restrito a administradores');
+      setTimeout(() => window.location.href = './dashboard.html', 1500);
+    }
+
+    const navbar = new Navbar();
+    navbar.render();
+
+    let table = null;
+
+    async function loadMercados() {
+      const result = await MercadoService.listar();
+      
+      if (result.success) {
+        table = new DataTable({
+          containerId: 'mercados-table',
+          columns: [
+            { label: 'Nome', field: 'nome' },
+            { label: 'Email', field: 'email' },
+            { label: 'Telefone', field: 'telefone' },
+            { label: 'Endereço', field: 'endereco' },
+            { label: 'Cidade', field: 'cidade' },
+          ],
+          data: result.data || [],
+          onEdit: editMercado,
+          onDelete: deleteMercado,
+          pageSize: 10,
+        });
+
+        table.render();
+        table.addActionListeners();
+      } else {
+        Toast.error('Erro ao carregar mercados');
+      }
+    }
+
+    async function editMercado(id) {
+      const result = await MercadoService.obter(id);
+      if (result.success) {
+        showFormModal('Editar Mercado', result.data, true);
+      }
+    }
+
+    async function deleteMercado(id) {
+      if (confirm('Tem certeza?')) {
+        const result = await MercadoService.deletar(id);
+        if (result.success) {
+          Toast.success(result.message);
+          loadMercados();
+        } else {
+          Toast.error(result.message);
+        }
+      }
+    }
+
+    function showFormModal(title, data = null, isEdit = false) {
+      try {
+        const form = new FormBuilder({
+          formId: 'mercado-form',
+          title,
+          fields: [
+            { name: 'nome', label: 'Nome', type: 'text', required: true, value: data?.nome || '' },
+            { name: 'email', label: 'Email', type: 'email', value: data?.email || '' },
+            { name: 'telefone', label: 'Telefone', type: 'tel', value: data?.telefone || '' },
+            { name: 'endereco', label: 'Endereço', type: 'text', value: data?.endereco || '' },
+            { name: 'cidade', label: 'Cidade', type: 'text', value: data?.cidade || '' },
+            { name: 'estado', label: 'Estado', type: 'text', value: data?.estado || '' },
+            { name: 'cep', label: 'CEP', type: 'text', value: data?.cep || '' },
+          ],
+          submitText: isEdit ? 'Atualizar' : 'Criar',
+          onSubmit: async (formData) => {
+            try {
+              let result;
+              if (isEdit) {
+                result = await MercadoService.atualizar(data.id, formData);
+              } else {
+                result = await MercadoService.criar(formData);
+              }
+
+              if (result.success) {
+                Toast.success(result.message);
+                modal.close();
+                loadMercados();
+              } else {
+                Toast.error(result.message);
+              }
+            } catch (error) {
+              console.error('[showFormModal] Erro ao salvar:', error);
+              Toast.error('Erro ao salvar mercado');
+            }
+          },
+        });
+
+        const modal = new Modal({ title, size: 'lg' });
+        modal.open();
+
+        setTimeout(() => {
+          const modalBody = modal.modal?.querySelector('.modal-body');
+          if (modalBody) {
+            form.render(modalBody);
+          } else {
+            console.error('[showFormModal] Modal body não encontrado');
+            Toast.error('Erro ao abrir formulário');
+          }
+        }, 100);
+      } catch (error) {
+        console.error('[showFormModal] Erro:', error);
+        Toast.error('Erro ao abrir formulário');
+      }
+    }
+
+    const btnNovoMercado = document.getElementById('novo-mercado-btn');
+    if (btnNovoMercado) {
+      btnNovoMercado.addEventListener('click', () => {
+        console.log('[Mercados] Botão "Novo Mercado" clicado');
+        showFormModal('Novo Mercado', null, false);
+      });
+    } else {
+      console.error('[Mercados] Botão "Novo Mercado" não encontrado');
+    }
+
+    loadMercados();
+  </script>
+</body>
+</html>

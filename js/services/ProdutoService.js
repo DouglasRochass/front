@@ -13,13 +13,17 @@ class ProdutoService {
   async listar(filtros = {}) {
     try {
       const response = await APIService.get(APIConfig.ENDPOINTS.PRODUTOS.LIST, filtros);
-      console.log('[ProdutoService.listar] Response:', response);
+      console.log('[ProdutoService.listar] Response completo:', response);
+      console.log('[ProdutoService.listar] Tipo:', typeof response);
+      console.log('[ProdutoService.listar] É Array?', Array.isArray(response));
       
       // Trata diferentes formatos de resposta
       let produtos = Array.isArray(response) ? response : 
                      response.data && Array.isArray(response.data) ? response.data :
                      response.content && Array.isArray(response.content) ? response.content :
                      [];
+      
+      console.log('[ProdutoService.listar] Produtos extraídos:', produtos.length, 'itens');
       
       return {
         success: true,

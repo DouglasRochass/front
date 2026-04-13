@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Funcionários - SmartStock</title>
+  <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
+    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
+    <a href="./fornecedores.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Fornecedores</a>
+    <a href="./funcionarios.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Funcionários</a>
+    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
+    <a href="./vendas.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Vendas</a>
+    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
+    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
+  </div>
+
+  <div style="padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl);">
+      <h1 style="font-size: 1.875rem;">Funcionários</h1>
+      <button class="btn btn-primary" id="novo-funcionario-btn">+ Novo Funcionário</button>
+    </div>
+
+    <div style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden;">
+      <div id="funcionarios-table"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import Navbar from '../js/components/Navbar.js';
+    import AuthService from '../js/services/AuthService.js';
+    import FuncionarioService from '../js/services/FuncionarioService.js';
+    import DataTable from '../js/components/DataTable.js';
+    import Modal from '../js/components/Modal.js';
+    import FormBuilder from '../js/components/FormBuilder.js';
+    import Toast from '../js/components/Toast.js';
+
+    if (!AuthService.isAuthenticated() || !AuthService.isGestor()) {
+      Toast.error('Acesso negado');
+      setTimeout(() => window.location.href = './dashboard.html', 1500);
+    }
+
+    const navbar = new Navbar();
+    navbar.render();
+
+    let table = null;
+
+    async function loadFuncionarios() {
+      const result = await FuncionarioService.listar();
+      
+      if (result.success) {
+        table = new DataTable({
+          containerId: 'funcionarios-table',
+          columns: [
+            { label: 'Nome', field: 'nome' },
+            { label: 'Email', field: 'email' },
+            { label: 'Cargo', field: 'cargo' },
+            { label: 'Mercado', field: 'mercado.nome' },
+            { label: 'Status', field: 'status' },
+          ],
+          data: result.data || [],
+          onEdit: editFuncionario,
+          onDelete: deleteFuncionario,
+          pageSize: 10,
+        });
+
+        table.render();
+        table.addActionListeners();
+      } else {
+        Toast.error('Erro ao carregar funcionários');
+      }
+    }
+
+    async function editFuncionario(id) {
+      const result = await FuncionarioService.obter(id);
+      if (result.success) {
+        showFormModal('Editar Funcionário', result.data, true);
+      }
+    }
+
+    async function deleteFuncionario(id) {
+      if (confirm('Tem certeza?')) {
+        const result = await FuncionarioService.deletar(id);
+        if (result.success) {
+          Toast.success(result.message);
+          loadFuncionarios();
+        } else {
+          Toast.error(result.message);
+        }
+      }
+    }
+
+    function showFormModal(title, data = null, isEdit = false) {
+      try {
+        const form = new FormBuilder({
+          formId: 'funcionario-form',
+          title,
+          fields: [
+            { name: 'nome', label: 'Nome', type: 'text', required: true, value: data?.nome || '' },
+            { name: 'email', label: 'Email', type: 'email', required: true, value: data?.email || '' },
+            { name: 'cargo', label: 'Cargo', type: 'select', required: true, 
+              options: [
+                { value: 'GERENTE', label: 'Gerente' },
+                { value: 'FUNCIONARIO', label: 'Funcionário' },
+              ],
+              value: data?.cargo || '' },
+            { name: 'mercadoId', label: 'Mercado', type: 'select', required: true, 
+              options: [{ value: '1', label: 'Mercado 1' }],
+              value: data?.mercadoId || '' },
+          ],
+          submitText: isEdit ? 'Atualizar' : 'Criar',
+          onSubmit: async (formData) => {
+            try {
+              let result;
+              if (isEdit) {
+                result = await FuncionarioService.atualizar(data.id, formData);
+              } else {
+                result = await FuncionarioService.criar(formData);
+              }
+
+              if (result.success) {
+                Toast.success(result.message);
+                modal.close();
+                loadFuncionarios();
+              } else {
+                Toast.error(result.message);
+              }
+            } catch (error) {
+              console.error('[showFormModal] Erro ao salvar:', error);
+              Toast.error('Erro ao salvar funcionário');
+            }
+          },
+        });
+
+        const modal = new Modal({ title, size: 'lg' });
+        modal.open();
+
+        setTimeout(() => {
+          const modalBody = modal.modal?.querySelector('.modal-body');
+          if (modalBody) {
+            form.render(modalBody);
+          } else {
+            console.error('[showFormModal] Modal body não encontrado');
+            Toast.error('Erro ao abrir formulário');
+          }
+        }, 100);
+      } catch (error) {
+        console.error('[showFormModal] Erro:', error);
+        Toast.error('Erro ao abrir formulário');
+      }
+    }
+
+    const btnNovoFuncionario = document.getElementById('novo-funcionario-btn');
+    if (btnNovoFuncionario) {
+      btnNovoFuncionario.addEventListener('click', () => {
+        console.log('[Funcionarios] Botão "Novo Funcionário" clicado');
+        showFormModal('Novo Funcionário', null, false);
+      });
+    } else {
+      console.error('[Funcionarios] Botão "Novo Funcionário" não encontrado');
+    }
+
+    loadFuncionarios();
+  </script>
+</body>
+</html>

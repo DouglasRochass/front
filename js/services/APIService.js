@@ -56,8 +56,13 @@ class APIService {
   getHeaders(customHeaders = {}) {
     const headers = { ...APIConfig.HEADERS, ...customHeaders };
     
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    // Verificar token no momento da requisição (não apenas na inicialização)
+    const currentToken = localStorage.getItem('access_token');
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
+      console.log(`[APIService] Token adicionado ao header: ${currentToken.substring(0, 20)}...`);
+    } else {
+      console.warn('[APIService] ⚠️ Nenhum token encontrado no localStorage');
     }
 
     // Adiciona headers customizados do usuário
@@ -86,16 +91,21 @@ class APIService {
     }
 
     try {
+      console.log(`[APIService] ${method} ${url}`);
       const response = await fetch(url, options);
       
+      console.log(`[APIService] Response Status: ${response.status} ${response.statusText}`);
+
       // Trata token expirado
       if (response.status === 401 && this.refreshToken && !this.isRefreshing) {
+        console.warn('[APIService] Token expirado, tentando renovar...');
         return this.handleTokenRefresh(method, url, data, customHeaders);
       }
 
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+        console.error(`[APIService] Erro na requisição:`, { status: response.status, result });
         throw {
           status: response.status,
           message: result.message || result.error || 'Erro na requisição',
@@ -104,7 +114,7 @@ class APIService {
       }
 
       // Log para debug
-      console.log(`[API ${method}] ${url}`, { result });
+      console.log(`[API ${method}] ${url}`, { sucesso: true, dados: result.data?.length || 'N/A' });
 
       return result;
     } catch (error) {

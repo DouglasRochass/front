@@ -158,13 +158,26 @@
           }
 
           // Login bem-sucedido
-          localStorage.setItem('auth_token', resposta.token);
+          localStorage.setItem('access_token', resposta.token);
+          if (resposta.refreshToken) {
+            localStorage.setItem('refresh_token', resposta.refreshToken);
+          }
+          // Salvar dados do usuário
+          if (resposta.usuarioId) {
+            localStorage.setItem('user', JSON.stringify({
+              id: resposta.usuarioId,
+              email: resposta.email,
+              nome: resposta.nome,
+              cargo: resposta.cargo,
+              mercadoId: resposta.mercadoId
+            }));
+          }
           apiService.token = resposta.token;
           
           exibirMensagem('Login realizado com sucesso!', 'sucesso');
           
           setTimeout(() => {
-            window.location.href = './dashboard.html';
+            window.location.href = '/pages/dashboard.html';
           }, 1500);
         });
       }
@@ -196,6 +209,22 @@
         setTimeout(() => div.remove(), 300);
       }, 5000);
     }
+
+    // Verificar se backend está acessível antes de permitir login
+    async function verificarBackend() {
+      try {
+        const response = await fetch('http://localhost:8080/api/health', { method: 'GET' });
+        if (!response.ok) {
+          console.warn('[Login] Backend pode estar indisponível');
+        }
+      } catch (error) {
+        console.error('[Login] Erro ao conectar com backend:', error.message);
+        console.error('[Login] Certifique-se de que http://localhost:8080 está rodando');
+      }
+    }
+
+    // Verificar backend ao carregar a página
+    document.addEventListener('DOMContentLoaded', verificarBackend);
   </script>
 </body>
 </html>

@@ -9,7 +9,9 @@ class FornecedorService {
   async listar(filtros = {}) {
     try {
       const response = await APIService.get(APIConfig.ENDPOINTS.FORNECEDORES.LIST, filtros);
-      console.log('[FornecedorService.listar] Response:', response);
+      console.log('[FornecedorService.listar] Response completo:', response);
+      console.log('[FornecedorService.listar] Tipo:', typeof response);
+      console.log('[FornecedorService.listar] É Array?', Array.isArray(response));
       
       let fornecedores = Array.isArray(response) ? response : 
                         response.data && Array.isArray(response.data) ? response.data :

@@ -198,6 +198,13 @@
       window.location.href = './login.html';
     }
 
+    // Debug: Verificar token
+    console.log('=== DEBUG DASHBOARD ===');
+    console.log('Token no localStorage:', localStorage.getItem('access_token') ? '✓ Presente' : '✗ Ausente');
+    console.log('User no localStorage:', localStorage.getItem('user') ? '✓ Presente' : '✗ Ausente');
+    console.log('APIService.token:', APIService.token ? '✓ Presente' : '✗ Ausente');
+    console.log('=======================');
+
     // Renderizar navbar
     const navbar = new Navbar();
     navbar.render();

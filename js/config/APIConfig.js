@@ -10,9 +10,9 @@ class APIConfig {
   static ENDPOINTS = {
     // Autenticação
     AUTH: {
-      LOGIN: '/auth/login',
-      LOGOUT: '/auth/logout',
-      REFRESH: '/auth/refresh',
+      LOGIN: '/login',
+      LOGOUT: '/logout',
+      REFRESH: '/refresh',
     },
 
     // Usuários
