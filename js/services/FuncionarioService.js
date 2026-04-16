@@ -1,5 +1,5 @@
 /**
- * Serviço de Funcionários
+  * Serviço de Funcionários
  */
 
 import APIService from './APIService.js';
@@ -10,12 +10,12 @@ class FuncionarioService {
     try {
       const response = await APIService.get(APIConfig.ENDPOINTS.FUNCIONARIOS.LIST, filtros);
       console.log('[FuncionarioService.listar] Response:', response);
-      
-      let funcionarios = Array.isArray(response) ? response : 
+
+      let funcionarios = Array.isArray(response) ? response :
                         response.data && Array.isArray(response.data) ? response.data :
                         response.content && Array.isArray(response.content) ? response.content :
                         [];
-      
+
       return { success: true, data: funcionarios };
     } catch (error) {
       console.error('[FuncionarioService.listar] Erro:', error);
@@ -28,7 +28,6 @@ class FuncionarioService {
       const endpoint = APIConfig.ENDPOINTS.FUNCIONARIOS.GET.replace(':id', id);
       const response = await APIService.get(endpoint);
       console.log('[FuncionarioService.obter] Response:', response);
-      
       const funcionario = response.data || response;
       return { success: true, data: funcionario };
     } catch (error) {
@@ -76,13 +75,9 @@ class FuncionarioService {
     try {
       const endpoint = APIConfig.ENDPOINTS.FUNCIONARIOS.BY_MERCADO.replace(':mercadoId', mercadoId);
       const response = await APIService.get(endpoint, filtros);
-      console.log('[FuncionarioService.listarPorMercado] Response:', response);
-      
-      let funcionarios = Array.isArray(response) ? response : 
+      let funcionarios = Array.isArray(response) ? response :
                         response.data && Array.isArray(response.data) ? response.data :
-                        response.content && Array.isArray(response.content) ? response.content :
-                        [];
-      
+                        response.content && Array.isArray(response.content) ? response.content : [];
       return { success: true, data: funcionarios };
     } catch (error) {
       console.error('[FuncionarioService.listarPorMercado] Erro:', error);

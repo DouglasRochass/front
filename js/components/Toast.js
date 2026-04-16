@@ -30,13 +30,10 @@ class Toast {
 
     Toast.container.appendChild(toast);
 
-    // Trigger animation
     setTimeout(() => toast.classList.add('show'), 10);
 
-    // Close button
     toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
 
-    // Auto remove
     if (duration) {
       setTimeout(() => {
         toast.classList.remove('show');
@@ -47,34 +44,14 @@ class Toast {
     return toast;
   }
 
-  static success(message, duration = 4000) {
-    return Toast.create(message, 'success', duration);
-  }
-
-  static error(message, duration = 5000) {
-    return Toast.create(message, 'error', duration);
-  }
-
-  static warning(message, duration = 4000) {
-    return Toast.create(message, 'warning', duration);
-  }
-
-  static info(message, duration = 4000) {
-    return Toast.create(message, 'info', duration);
-  }
-
-  static loading(message) {
-    return Toast.create(message, 'loading', 0);
-  }
+  static success(message, duration = 4000) { return Toast.create(message, 'success', duration); }
+  static error(message, duration = 5000) { return Toast.create(message, 'error', duration); }
+  static warning(message, duration = 4000) { return Toast.create(message, 'warning', duration); }
+  static info(message, duration = 4000) { return Toast.create(message, 'info', duration); }
+  static loading(message) { return Toast.create(message, 'loading', 0); }
 
   static getIcon(type) {
-    const icons = {
-      success: '✓',
-      error: '✕',
-      warning: '⚠',
-      info: 'ℹ',
-      loading: '⟳',
-    };
+    const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ', loading: '⟳' };
     return icons[type] || '';
   }
 }

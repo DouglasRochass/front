@@ -8,14 +8,11 @@ class APIConfig {
   }
 
   static ENDPOINTS = {
-    // Autenticação
     AUTH: {
       LOGIN: '/login',
       LOGOUT: '/logout',
       REFRESH: '/refresh',
     },
-
-    // Usuários
     USUARIOS: {
       LIST: '/usuarios',
       CREATE: '/usuarios',
@@ -25,8 +22,6 @@ class APIConfig {
       RECUPERAR_SENHA: '/usuarios/recuperar-senha',
       REDEFINIR_SENHA: '/usuarios/redefinir-senha/:token',
     },
-
-    // Produtos
     PRODUTOS: {
       LIST: '/produtos',
       CREATE: '/produtos',
@@ -37,8 +32,6 @@ class APIConfig {
       BY_FORNECEDOR: '/produtos/fornecedor/:fornecedorId',
       BY_MERCADO: '/produtos/mercado/:mercadoId',
     },
-
-    // Fornecedores
     FORNECEDORES: {
       LIST: '/fornecedores',
       CREATE: '/fornecedores',
@@ -48,8 +41,6 @@ class APIConfig {
       BY_NOME: '/fornecedores/nome/:nome',
       BY_EMAIL: '/fornecedores/email/:email',
     },
-
-    // Funcionários
     FUNCIONARIOS: {
       LIST: '/funcionarios',
       CREATE: '/funcionarios',
@@ -58,8 +49,6 @@ class APIConfig {
       DELETE: '/funcionarios/:id',
       BY_MERCADO: '/funcionarios/mercado/:mercadoId',
     },
-
-    // Mercados
     MERCADOS: {
       LIST: '/mercados',
       CREATE: '/mercados',
@@ -67,16 +56,12 @@ class APIConfig {
       UPDATE: '/mercados/:id',
       DELETE: '/mercados/:id',
     },
-
-    // Vendas
     VENDAS: {
       LIST: '/vendas',
       CREATE: '/vendas',
       GET: '/vendas/:id',
       RELATORIO: '/vendas/relatorio',
     },
-
-    // Importação
     IMPORTACAO: {
       CSV: '/importacao/csv',
       EXCEL: '/importacao/excel',

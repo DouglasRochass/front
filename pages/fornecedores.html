@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fornecedores - SmartStock</title>
   <link rel="stylesheet" href="../styles/main.css">
+  <script>
+    // Verificação SÍNCRONA antes de renderizar
+    (function() {
+      const token = localStorage.getItem('access_token');
+      if (!token || token.trim() === '') {
+        window.location.replace('/login');
+      }
+    })();
+  </script>
   <style>
     .page-container {
       padding: var(--spacing-lg);
@@ -49,17 +58,6 @@
 <body>
   <nav id="navbar"></nav>
 
-  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
-    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
-    <a href="./fornecedores.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Fornecedores</a>
-    <a href="./funcionarios.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Funcionários</a>
-    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
-    <a href="./vendas.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Vendas</a>
-    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
-    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
-  </div>
-
   <div class="page-container">
     <div class="page-header">
       <h1>Fornecedores</h1>
@@ -79,10 +77,6 @@
     import Modal from '../js/components/Modal.js';
     import FormBuilder from '../js/components/FormBuilder.js';
     import Toast from '../js/components/Toast.js';
-
-    if (!AuthService.isAuthenticated()) {
-      setTimeout(() => window.location.href = './tela_login.html', 1500);
-    }
 
     const navbar = new Navbar();
     navbar.render();

@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Funcionários - SmartStock</title>
   <link rel="stylesheet" href="../styles/main.css">
+  <script>
+    // Verificação SÍNCRONA antes de renderizar
+    (function() {
+      const token = localStorage.getItem('access_token');
+      if (!token || token.trim() === '') {
+        window.location.replace('/login');
+      }
+    })();
+  </script>
+  <style>
+  </style>
 </head>
 <body>
   <nav id="navbar"></nav>
-
-  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
-    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
-    <a href="./fornecedores.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Fornecedores</a>
-    <a href="./funcionarios.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Funcionários</a>
-    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
-    <a href="./vendas.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Vendas</a>
-    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
-    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
-  </div>
 
   <div style="padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl);">
@@ -35,24 +35,28 @@
     import Navbar from '../js/components/Navbar.js';
     import AuthService from '../js/services/AuthService.js';
     import FuncionarioService from '../js/services/FuncionarioService.js';
+    import MercadoService from '../js/services/MercadoService.js';
     import DataTable from '../js/components/DataTable.js';
     import Modal from '../js/components/Modal.js';
     import FormBuilder from '../js/components/FormBuilder.js';
     import Toast from '../js/components/Toast.js';
 
-    if (!AuthService.isAuthenticated() || !AuthService.isGestor()) {
-      Toast.error('Acesso negado');
-      setTimeout(() => window.location.href = './dashboard.html', 1500);
-    }
-
     const navbar = new Navbar();
     navbar.render();
 
     let table = null;
+    let mercadosOptions = [];
+
+    async function carregarMercados() {
+      const result = await MercadoService.listar();
+      if (result.success && result.data) {
+        mercadosOptions = result.data.map(m => ({ value: String(m.id), label: m.nome }));
+      }
+    }
 
     async function loadFuncionarios() {
       const result = await FuncionarioService.listar();
-      
+
       if (result.success) {
         table = new DataTable({
           containerId: 'funcionarios-table',
@@ -70,7 +74,6 @@
         });
 
         table.render();
-        table.addActionListeners();
       } else {
         Toast.error('Erro ao carregar funcionários');
       }
@@ -103,15 +106,15 @@
           fields: [
             { name: 'nome', label: 'Nome', type: 'text', required: true, value: data?.nome || '' },
             { name: 'email', label: 'Email', type: 'email', required: true, value: data?.email || '' },
-            { name: 'cargo', label: 'Cargo', type: 'select', required: true, 
+            { name: 'cargo', label: 'Cargo', type: 'select', required: true,
               options: [
                 { value: 'GERENTE', label: 'Gerente' },
                 { value: 'FUNCIONARIO', label: 'Funcionário' },
               ],
               value: data?.cargo || '' },
-            { name: 'mercadoId', label: 'Mercado', type: 'select', required: true, 
-              options: [{ value: '1', label: 'Mercado 1' }],
-              value: data?.mercadoId || '' },
+            { name: 'mercadoId', label: 'Mercado', type: 'select', required: true,
+              options: mercadosOptions,
+              value: data?.mercadoId ? String(data.mercadoId) : '' },
           ],
           submitText: isEdit ? 'Atualizar' : 'Criar',
           onSubmit: async (formData) => {
@@ -145,7 +148,6 @@
           if (modalBody) {
             form.render(modalBody);
           } else {
-            console.error('[showFormModal] Modal body não encontrado');
             Toast.error('Erro ao abrir formulário');
           }
         }, 100);
@@ -157,14 +159,10 @@
 
     const btnNovoFuncionario = document.getElementById('novo-funcionario-btn');
     if (btnNovoFuncionario) {
-      btnNovoFuncionario.addEventListener('click', () => {
-        console.log('[Funcionarios] Botão "Novo Funcionário" clicado');
-        showFormModal('Novo Funcionário', null, false);
-      });
-    } else {
-      console.error('[Funcionarios] Botão "Novo Funcionário" não encontrado');
+      btnNovoFuncionario.addEventListener('click', () => showFormModal('Novo Funcionário', null, false));
     }
 
+    await carregarMercados();
     loadFuncionarios();
   </script>
 </body>

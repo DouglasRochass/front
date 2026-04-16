@@ -1,20 +1,64 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
-    <meta charset="utf-8">
-    <title>Senha atualizada</title>
-  </head>
-  
-  <body>
-    
-    <div class="container">
-      <h1>PARABENS!</h1>
-      <P>Senha atualizada</P>
-      
-      <a href="./tela_login.html">Voltar a tela de login</a>
-      <a href="./tela_login.html">Voltar a tela de login</a>
+<head>
+  <meta charset="utf-8">
+  <title>Senha atualizada</title>
+  <link rel="stylesheet" href="../styles/main.css">
+  <style>
+    .success-icon {
+      font-size: 4rem;
+      color: var(--success);
+      text-align: center;
+      margin-bottom: var(--spacing-lg);
+      animation: popIn 0.5s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .countdown-redirect { font-size: 0.875rem; color: var(--gray-500); margin-top: var(--spacing-md); text-align: center; }
+  </style>
+</head>
+
+<body class="auth-page">
+
+  <div class="login-wrapper">
+
+    <img src="../logo.png" class="logo">
+
+    <div class="login-container" style="text-align: center;">
+
+      <div class="success-icon">✓</div>
+
+      <h1 style="color: var(--success);">Senha atualizada!</h1>
+
+      <p style="color: var(--gray-600); margin-bottom: var(--spacing-xl);">
+        Sua senha foi redefinida com sucesso.<br>
+        Já pode fazer login com a nova senha.
+      </p>
+
+      <a href="./tela_login.html" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        Ir para o login
+      </a>
+
+      <div class="countdown-redirect" id="countdown-redirect"></div>
+
     </div>
-    
-  </body>
-  
+
+  </div>
+
+  <script>
+    let segundos = 5;
+    const countdownEl = document.getElementById('countdown-redirect');
+
+    const interval = setInterval(() => {
+      countdownEl.textContent = `Redirecionando em ${segundos}s...`;
+      segundos--;
+      if (segundos < 0) {
+        clearInterval(interval);
+        window.location.href = './tela_login.html';
+      }
+    }, 1000);
+  </script>
+</body>
 </html>

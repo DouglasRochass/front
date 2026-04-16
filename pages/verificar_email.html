@@ -1,263 +1,141 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  
-  <head>
-    <meta charset="utf-8">
-    <title>Verificar Email</title>
-    <link rel="stylesheet" href="../styles/main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-      .mensagem-aviso {
-        animation: slideIn 0.3s ease-in-out;
-      }
+<head>
+  <meta charset="utf-8">
+  <title>Verificar email</title>
+  <link rel="stylesheet" href="../styles/main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    // Se já está autenticado, redirecionar para dashboard
+    if (localStorage.getItem('access_token')) {
+      window.location.href = '/';
+    }
+  </script>
+  <style>
+    .mensagem-aviso { animation: slideIn 0.3s ease-in-out; }
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+    .email-display { background: var(--gray-100); border-radius: var(--radius-md); padding: var(--spacing-md); margin: var(--spacing-md) 0; font-weight: 600; color: var(--primary); text-align: center; word-break: break-all; }
+    .reenviar-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.875rem; font-weight: 500; text-decoration: underline; margin-top: var(--spacing-sm); }
+    .reenviar-btn:disabled { color: var(--gray-400); cursor: not-allowed; text-decoration: none; }
+    .countdown { font-size: 0.8rem; color: var(--gray-500); margin-top: 4px; }
+  </style>
+</head>
 
-      @keyframes slideIn {
-        from {
-          transform: translateX(400px);
-          opacity: 0;
-        }
-        to {
-          transform: translateX(0);
-          opacity: 1;
-        }
-      }
+<body class="auth-page">
 
-      @keyframes slideOut {
-        from {
-          transform: translateX(0);
-          opacity: 1;
-        }
-        to {
-          transform: translateX(400px);
-          opacity: 0;
-        }
-      }
+  <div class="login-wrapper">
 
-      .email-display {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 4px;
-        margin: 20px 0;
-        word-break: break-all;
-        font-weight: 500;
-      }
+    <img src="../logo.png" class="logo">
 
-      .action-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        margin: 20px 0;
-      }
+    <div class="login-container">
 
-      .action-buttons button {
-        width: 100%;
-      }
+      <h1 style="font-size: 1.5rem;">Verifique seu email</h1>
 
-      .countdown {
-        text-align: center;
-        margin-top: 15px;
-        font-size: 0.9em;
-        color: #666;
-      }
-    </style>
-  </head>
-  
-  <body class="auth-page">
-    
-    <div class="login-wrapper">
-      <img src="../../logo.png" class="logo">
-      <div class="login-container">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <i class="fa-solid fa-envelope" style="font-size: 3em; color: #007bff;"></i>
-        </div>
+      <p>Enviamos um link de redefinição de senha para:</p>
 
-        <h1>Verifique o seu E-mail</h1>
-        <p>Enviamos um link de recuperacao para o seu e-mail. Verifique sua caixa de entrada e tambem a pasta de spam.</p>
+      <div class="email-display" id="email-display">carregando...</div>
 
-        <div class="email-display" id="email-display">
-          usuario@gmail.com
-        </div>
+      <p style="font-size: 0.875rem; color: var(--gray-600);">
+        Clique no link do email para redefinir sua senha.<br>
+        Verifique também a pasta de spam.
+      </p>
 
-        <div class="action-buttons">
-          <button type="button" onclick="window.open('https://mail.google.com'); return false;">
-            <i class="fa-solid fa-envelope"></i> Abrir Gmail
-          </button>
-        </div>
+      <button id="abrir-gmail" class="btn btn-primary" style="width: 100%; margin-top: var(--spacing-md);">
+        <span class="fa-solid fa-envelope"></span> Abrir Gmail
+      </button>
 
+      <div style="text-align: center; margin-top: var(--spacing-lg);">
+        <p style="font-size: 0.875rem; color: var(--gray-600);">Não recebeu o email?</p>
+        <button class="reenviar-btn" id="reenviar-btn">Reenviar email</button>
         <div class="countdown" id="countdown"></div>
-
-        <p style="text-align: center; margin-top: 20px;">
-          <a href="#" id="reenviar-email">
-            <i class="fa-solid fa-redo"></i> Nao recebeu? Reenviar E-mail
-          </a>
-        </p>
-
-        <a href="./tela_login.html" style="display: block; text-align: center; margin-top: 20px;">
-          Voltar para login
-        </a>
       </div>
+
+      <a href="./tela_login.html" style="display: block; text-align: center; margin-top: var(--spacing-lg);">
+        Voltar para login
+      </a>
+
     </div>
 
-    <script>
-      // Configuracao da API
-      const API_CONFIG = {
-        BASE_URL: 'http://localhost:8080/api',
-        ENDPOINTS: {
-          RECUPERAR_SENHA: '/recuperar-senha',
-          VERIFICAR_EMAIL: '/verificar-email'
-        },
-        HEADERS: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+  </div>
+
+  <script>
+    const API_CONFIG = {
+      BASE_URL: 'http://localhost:8080/api',
+      ENDPOINTS: { RECUPERAR_SENHA: '/recuperar-senha' },
+      HEADERS: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+    };
+
+    class APIService {
+      async recuperarSenha(email) {
+        const url = API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS.RECUPERAR_SENHA;
+        try {
+          const response = await fetch(url, { method: 'POST', headers: API_CONFIG.HEADERS, body: JSON.stringify({ email }) });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) return { sucesso: false, mensagem: data.message || `Erro HTTP ${response.status}` };
+          return { sucesso: true, ...data };
+        } catch (erro) {
+          return { sucesso: false, mensagem: erro.message };
         }
-      };
+      }
+    }
 
-      class APIService {
-        async requisicao(endpoint, opcoes = {}) {
-          const url = API_CONFIG.BASE_URL + endpoint;
-          const config = {
-            headers: API_CONFIG.HEADERS,
-            ...opcoes
-          };
+    const apiService = new APIService();
 
-          try {
-            const response = await fetch(url, config);
-            const data = await response.json().catch(() => ({}));
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email') || sessionStorage.getItem('recovery_email') || '';
 
-            if (!response.ok) {
-              throw new Error(data.message || `Erro HTTP ${response.status}`);
-            }
-            return { sucesso: true, ...data };
-          } catch (erro) {
-            return { sucesso: false, mensagem: erro.message };
+    document.getElementById('email-display').textContent = email || 'email não encontrado';
+
+    document.getElementById('abrir-gmail').addEventListener('click', () => {
+      window.open('https://mail.google.com', '_blank');
+    });
+
+    let cooldown = 0;
+    const reenviarBtn = document.getElementById('reenviar-btn');
+    const countdownEl = document.getElementById('countdown');
+
+    reenviarBtn.addEventListener('click', async () => {
+      if (!email) { exibirMensagem('Email não encontrado. Volte e tente novamente.', 'erro'); return; }
+      if (cooldown > 0) return;
+
+      reenviarBtn.disabled = true;
+      const resposta = await apiService.recuperarSenha(email);
+
+      if (resposta.sucesso) {
+        exibirMensagem('Email reenviado com sucesso!', 'sucesso');
+        cooldown = 60;
+        const interval = setInterval(() => {
+          cooldown--;
+          countdownEl.textContent = `Aguarde ${cooldown}s para reenviar`;
+          if (cooldown <= 0) {
+            clearInterval(interval);
+            countdownEl.textContent = '';
+            reenviarBtn.disabled = false;
           }
-        }
-
-        async recuperarSenha(email) {
-          return this.requisicao(API_CONFIG.ENDPOINTS.RECUPERAR_SENHA, {
-            method: 'POST',
-            body: JSON.stringify({ email })
-          });
-        }
-
-        async verificarEmail(token) {
-          return this.requisicao(API_CONFIG.ENDPOINTS.VERIFICAR_EMAIL, {
-            method: 'POST',
-            body: JSON.stringify({ token })
-          });
-        }
+        }, 1000);
+      } else {
+        exibirMensagem(resposta.mensagem || 'Erro ao reenviar email', 'erro');
+        reenviarBtn.disabled = false;
       }
+    });
 
-      const apiService = new APIService();
-
-      document.addEventListener('DOMContentLoaded', function() {
-        // Obtem email da URL ou do sessionStorage
-        const params = new URLSearchParams(window.location.search);
-        const email = params.get('email') || sessionStorage.getItem('recovery_email');
-
-        if (email) {
-          document.getElementById('email-display').textContent = email;
-        }
-
-        let canReenviar = true;
-        let contagem = 0;
-
-        // Manipula reenvio de email
-        const reenviarLink = document.getElementById('reenviar-email');
-        if (reenviarLink) {
-          reenviarLink.addEventListener('click', async (e) => {
-            e.preventDefault();
-
-            if (!canReenviar) {
-              return;
-            }
-
-            if (!email) {
-              exibirMensagem('Email nao encontrado. Volte para recuperacao de senha.', 'erro');
-              return;
-            }
-
-            canReenviar = false;
-            contagem = 60;
-
-            const textoOriginal = reenviarLink.innerHTML;
-            reenviarLink.style.pointerEvents = 'none';
-            reenviarLink.style.opacity = '0.5';
-
-            const resposta = await apiService.recuperarSenha(email);
-
-            if (resposta.sucesso === false) {
-              exibirMensagem(resposta.mensagem || 'Erro ao reenviar email', 'erro');
-              canReenviar = true;
-              reenviarLink.style.pointerEvents = 'auto';
-              reenviarLink.style.opacity = '1';
-              return;
-            }
-
-            exibirMensagem('Email reenviado com sucesso!', 'sucesso');
-
-            // Inicia countdown
-            const countdownInterval = setInterval(() => {
-              contagem--;
-              const countdown = document.getElementById('countdown');
-
-              if (contagem > 0) {
-                countdown.textContent = `Pode reenviar novamente em ${contagem}s`;
-              } else {
-                clearInterval(countdownInterval);
-                canReenviar = true;
-                countdown.textContent = '';
-                reenviarLink.innerHTML = textoOriginal;
-                reenviarLink.style.pointerEvents = 'auto';
-                reenviarLink.style.opacity = '1';
-              }
-            }, 1000);
-          });
-        }
-
-        // Verifica se ha token na URL e valida automaticamente
-        const tokenVerificacao = params.get('token');
-        if (tokenVerificacao) {
-          (async () => {
-            const resposta = await apiService.verificarEmail(tokenVerificacao);
-            if (resposta.sucesso !== false) {
-              exibirMensagem('Email verificado com sucesso!', 'sucesso');
-              setTimeout(() => {
-                window.location.href = '/pages/tela_login.html';
-              }, 2000);
-            }
-          })();
-        }
-      });
-
-      function exibirMensagem(mensagem, tipo = 'info') {
-        const anterior = document.querySelector('.mensagem-aviso');
-        if (anterior) anterior.remove();
-
-        const div = document.createElement('div');
-        div.className = `mensagem-aviso mensagem-${tipo}`;
-        div.textContent = mensagem;
-        div.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          padding: 15px 20px;
-          border-radius: 4px;
-          font-weight: 500;
-          z-index: 1000;
-          animation: slideIn 0.3s ease-in-out;
-          ${tipo === 'erro' ? 'background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;' : ''}
-          ${tipo === 'sucesso' ? 'background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;' : ''}
-          ${tipo === 'info' ? 'background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;' : ''}
-        `;
-        document.body.appendChild(div);
-        setTimeout(() => {
-          div.style.animation = 'slideOut 0.3s ease-in-out';
-          setTimeout(() => div.remove(), 300);
-        }, 5000);
-      }
-    </script>
-
-  </body>
-
+    function exibirMensagem(mensagem, tipo = 'info') {
+      const anterior = document.querySelector('.mensagem-aviso');
+      if (anterior) anterior.remove();
+      const div = document.createElement('div');
+      div.className = `mensagem-aviso mensagem-${tipo}`;
+      div.textContent = mensagem;
+      div.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 15px 20px;
+        border-radius: 4px; font-weight: 500; z-index: 1000; animation: slideIn 0.3s ease-in-out;
+        ${tipo === 'erro' ? 'background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;' : ''}
+        ${tipo === 'sucesso' ? 'background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;' : ''}
+        ${tipo === 'info' ? 'background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;' : ''}
+      `;
+      document.body.appendChild(div);
+      setTimeout(() => { div.style.animation = 'slideOut 0.3s ease-in-out'; setTimeout(() => div.remove(), 300); }, 5000);
+    }
+  </script>
+</body>
 </html>

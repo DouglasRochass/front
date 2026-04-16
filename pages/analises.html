@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Análises - SmartStock</title>
+  <link rel="stylesheet" href="../styles/main.css">
+  <script>
+    // Verificação SÍNCRONA antes de renderizar
+    (function() {
+      const token = localStorage.getItem('access_token');
+      if (!token || token.trim() === '') {
+        window.location.replace('/login');
+      }
+    })();
+  </script>
+  <style>
+    .analises-container {
+      padding: var(--spacing-lg);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--spacing-xl);
+      flex-wrap: wrap;
+      gap: var(--spacing-md);
+    }
+    .page-header h1 { font-size: 1.875rem; }
+    .page-header p  { color: var(--gray-500); font-size: 0.875rem; margin-top: 4px; }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: var(--spacing-lg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Cards de resumo ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-2xl);
+    }
+    .summary-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--spacing-lg);
+    }
+    .summary-card h3 {
+      font-size: 0.8rem;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--spacing-sm);
+    }
+    .summary-card .value {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+    .summary-card .sub  { font-size: 0.78rem; color: var(--gray-400); margin-top: 4px; }
+
+    /* ── Seção de gráficos ── */
+    .charts-section {
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-2xl);
+    }
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: var(--spacing-xl);
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    .chart-wrapper { position: relative; }
+    .chart-wrapper canvas { max-height: 300px; }
+    .chart-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: var(--spacing-md);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* ── Alertas de reposição ── */
+    .alertas-section {
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--spacing-xl);
+      margin-bottom: var(--spacing-2xl);
+    }
+    .alertas-filters {
+      display: flex;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 0.35rem 1rem;
+      border-radius: 99px;
+      border: 1px solid var(--gray-300);
+      background: white;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+    .filter-btn:hover        { border-color: var(--primary); color: var(--primary); }
+    .filter-btn.active       { background: var(--primary); color: white; border-color: var(--primary); }
+    .filter-btn.f-critico.active   { background: #ef4444; border-color: #ef4444; }
+    .filter-btn.f-atencao.active   { background: #f59e0b; border-color: #f59e0b; }
+    .filter-btn.f-aviso.active     { background: #3b82f6; border-color: #3b82f6; }
+
+    .alerta-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .alerta-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--gray-50, #f9fafb);
+      color: var(--gray-600);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .alerta-table td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: middle;
+    }
+    .alerta-table tr:last-child td { border-bottom: none; }
+    .alerta-table tr:hover td { background: var(--gray-50, #f9fafb); }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-critico { background: #fee2e2; color: #991b1b; }
+    .badge-atencao { background: #fef3c7; color: #92400e; }
+    .badge-aviso   { background: #dbeafe; color: #1e40af; }
+    .badge-ok      { background: #d1fae5; color: #065f46; }
+
+    .dias-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 140px; }
+    .dias-bar-track {
+      flex: 1; height: 6px;
+      background: var(--gray-200);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .dias-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.5s;
+    }
+    .dias-bar-fill.critico { background: #ef4444; }
+    .dias-bar-fill.atencao { background: #f59e0b; }
+    .dias-bar-fill.aviso   { background: #3b82f6; }
+    .dias-bar-fill.ok      { background: #10b981; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--gray-400);
+    }
+    .empty-state span { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+
+    .skeleton-row td { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+      border-radius: 4px;
+      height: 18px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    .recalc-btn {
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <nav id="navbar"></nav>
+
+  <div class="analises-container">
+    <div class="page-header">
+      <div>
+        <h1>Análises</h1>
+        <p>Sazonalidade de vendas e previsão de reposição de estoque</p>
+      </div>
+      <button class="btn btn-secondary recalc-btn" id="btn-recalcular">↻ Atualizar dados</button>
+    </div>
+
+    <!-- Cards de resumo -->
+    <div class="summary-grid" id="summary-grid">
+      <div class="summary-card">
+        <h3>Melhor Mês</h3>
+        <div class="value" id="melhor-mes" style="color:var(--primary)">—</div>
+        <div class="sub" id="melhor-mes-valor"></div>
+      </div>
+      <div class="summary-card">
+        <h3>Melhor Dia</h3>
+        <div class="value" id="melhor-dia" style="color:var(--success)">—</div>
+        <div class="sub" id="melhor-dia-valor"></div>
+      </div>
+      <div class="summary-card">
+        <h3>Alertas Críticos</h3>
+        <div class="value" id="total-criticos" style="color:#ef4444">0</div>
+        <div class="sub">produtos &lt; 7 dias de estoque</div>
+      </div>
+      <div class="summary-card">
+        <h3>Em Atenção</h3>
+        <div class="value" id="total-atencao" style="color:#f59e0b">0</div>
+        <div class="sub">produtos 8–30 dias de estoque</div>
+      </div>
+    </div>
+
+    <!-- Gráficos de sazonalidade -->
+    <div class="charts-section">
+      <div class="section-title">📈 Sazonalidade de Vendas</div>
+      <div class="charts-row">
+        <div class="chart-wrapper">
+          <div class="chart-label">Faturamento por Mês</div>
+          <canvas id="chart-mensal"></canvas>
+        </div>
+        <div class="chart-wrapper">
+          <div class="chart-label">Faturamento por Dia da Semana</div>
+          <canvas id="chart-semanal"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alertas de reposição -->
+    <div class="alertas-section">
+      <div class="section-title">🔔 Alertas de Reposição por Previsão</div>
+
+      <div class="alertas-filters">
+        <button class="filter-btn active" data-filter="todos">Todos</button>
+        <button class="filter-btn f-critico" data-filter="critico">🔴 Crítico (&lt;7 dias)</button>
+        <button class="filter-btn f-atencao" data-filter="atencao">🟡 Atenção (8–14 dias)</button>
+        <button class="filter-btn f-aviso"   data-filter="aviso">🔵 Aviso (15–30 dias)</button>
+        <button class="filter-btn f-ok"      data-filter="ok">🟢 Ok (&gt;30 dias)</button>
+      </div>
+
+      <div id="alertas-table-wrapper">
+        <table class="alerta-table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Estoque Atual</th>
+              <th>Vendas/dia (30d)</th>
+              <th>Dias Restantes</th>
+              <th>Qtd. Recomendada</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="alertas-tbody">
+            <tr class="skeleton-row"><td colspan="6">&nbsp;</td></tr>
+            <tr class="skeleton-row"><td colspan="6">&nbsp;</td></tr>
+            <tr class="skeleton-row"><td colspan="6">&nbsp;</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import Navbar from '../js/components/Navbar.js';
+    import AuthService from '../js/services/AuthService.js';
+    import VendaService from '../js/services/VendaService.js';
+    import ProdutoService from '../js/services/ProdutoService.js';
+    import Toast from '../js/components/Toast.js';
+
+    // Renderizar navbar
+    const navbar = new Navbar();
+    navbar.render();
+
+    // ── Instâncias dos gráficos ──────────────────────────────────
+    let chartMensal  = null;
+    let chartSemanal = null;
+    let previsaoData = [];
+    let filtroAtivo  = 'todos';
+
+    const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                        'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const DIAS_FULL  = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+    function formatarMoeda(v) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+    }
+
+    // ── Gráfico mensal ───────────────────────────────────────────
+    function renderChartMensal(saz) {
+      if (chartMensal) chartMensal.destroy();
+      const ctx = document.getElementById('chart-mensal').getContext('2d');
+      chartMensal = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: saz.mensal.labels,
+          datasets: [
+            {
+              label: 'Faturamento (R$)',
+              data: saz.mensal.totais,
+              backgroundColor: saz.mensal.totais.map((v, i) => {
+                const max = Math.max(...saz.mensal.totais);
+                return v === max ? 'rgba(59,130,246,0.9)' : 'rgba(59,130,246,0.35)';
+              }),
+              borderColor: 'rgba(59,130,246,0.8)',
+              borderWidth: 1,
+              borderRadius: 4,
+            },
+            {
+              label: 'Nº Vendas',
+              data: saz.mensal.quantidades,
+              type: 'line',
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16,185,129,0.1)',
+              pointBackgroundColor: '#10b981',
+              tension: 0.4,
+              fill: false,
+              yAxisID: 'y2',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            y:  { beginAtZero: true, ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR') } },
+            y2: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false },
+                  ticks: { callback: v => v + ' vd' } },
+          },
+          plugins: {
+            legend: { position: 'bottom' },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  if (ctx.dataset.label.startsWith('Fatur'))
+                    return ' ' + formatarMoeda(ctx.raw);
+                  return ' ' + ctx.raw + ' vendas';
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // ── Gráfico semanal ──────────────────────────────────────────
+    function renderChartSemanal(saz) {
+      if (chartSemanal) chartSemanal.destroy();
+      const ctx = document.getElementById('chart-semanal').getContext('2d');
+      const maxIdx = saz.semanal.totais.indexOf(Math.max(...saz.semanal.totais));
+      chartSemanal = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: saz.semanal.labels,
+          datasets: [{
+            label: 'Faturamento',
+            data: saz.semanal.totais,
+            backgroundColor: 'rgba(59,130,246,0.15)',
+            borderColor: 'rgba(59,130,246,0.8)',
+            pointBackgroundColor: saz.semanal.totais.map((_, i) =>
+              i === maxIdx ? '#3b82f6' : 'rgba(59,130,246,0.5)'),
+            pointRadius: saz.semanal.totais.map((_, i) => i === maxIdx ? 6 : 3),
+          }],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            r: {
+              beginAtZero: true,
+              ticks: { display: false },
+              grid: { color: 'rgba(0,0,0,0.06)' },
+            },
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ' ' + formatarMoeda(ctx.raw),
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // ── Tabela de alertas ────────────────────────────────────────
+    const BADGE = {
+      critico: '<span class="badge-status badge-critico">🔴 Crítico</span>',
+      atencao: '<span class="badge-status badge-atencao">🟡 Atenção</span>',
+      aviso:   '<span class="badge-status badge-aviso">🔵 Aviso</span>',
+      ok:      '<span class="badge-status badge-ok">🟢 Ok</span>',
+    };
+
+    function renderAlertasTable(data) {
+      const tbody = document.getElementById('alertas-tbody');
+      const filtrado = filtroAtivo === 'todos'
+        ? data
+        : data.filter(p => p.status === filtroAtivo);
+
+      if (filtrado.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6">
+          <div class="empty-state">
+            <span>✅</span>
+            Nenhum produto nesta categoria.
+          </div></td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtrado.map(p => {
+        const dias = p.diasRestantes !== null ? p.diasRestantes : '∞';
+        const pct  = p.diasRestantes !== null ? Math.min((p.diasRestantes / 60) * 100, 100) : 100;
+        return `
+          <tr>
+            <td><strong>${p.nome}</strong></td>
+            <td>${p.estoque} un.</td>
+            <td>${p.velDiaria > 0 ? p.velDiaria.toFixed(2) + ' un/dia' : '—'}</td>
+            <td>
+              <div class="dias-bar-wrap">
+                <div class="dias-bar-track">
+                  <div class="dias-bar-fill ${p.status}" style="width:${pct}%"></div>
+                </div>
+                <span style="font-size:0.8rem;font-weight:600;min-width:32px;">${dias}</span>
+              </div>
+            </td>
+            <td>${p.recomendacao !== null ? p.recomendacao + ' un.' : '—'}</td>
+            <td>${BADGE[p.status] || ''}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ── Cards de resumo ──────────────────────────────────────────
+    function renderSummary(saz, previsao) {
+      const totaisMensais = saz.mensal.totais;
+      const maxMes = totaisMensais.indexOf(Math.max(...totaisMensais));
+      document.getElementById('melhor-mes').textContent = MESES_FULL[maxMes];
+      document.getElementById('melhor-mes-valor').textContent = formatarMoeda(totaisMensais[maxMes]);
+
+      const totaisSemanal = saz.semanal.totais;
+      const maxDia = totaisSemanal.indexOf(Math.max(...totaisSemanal));
+      document.getElementById('melhor-dia').textContent = DIAS_FULL[maxDia];
+      document.getElementById('melhor-dia-valor').textContent = formatarMoeda(totaisSemanal[maxDia]);
+
+      document.getElementById('total-criticos').textContent =
+        previsao.filter(p => p.status === 'critico').length;
+      document.getElementById('total-atencao').textContent =
+        previsao.filter(p => p.status === 'atencao' || p.status === 'aviso').length;
+    }
+
+    // ── Carregar e processar dados ────────────────────────────────
+    async function carregar() {
+      try {
+        const [resVendas, resProdutos] = await Promise.all([
+          VendaService.listar(),
+          ProdutoService.listar(),
+        ]);
+
+        if (!resVendas.success)   { Toast.error('Erro ao carregar vendas');   return; }
+        if (!resProdutos.success) { Toast.error('Erro ao carregar produtos'); return; }
+
+        const vendas   = resVendas.data   || [];
+        const produtos = resProdutos.data || [];
+
+        const saz      = VendaService.analisarSazonalidade(vendas);
+        previsaoData   = VendaService.calcularPrevisaoEstoque(produtos, vendas);
+
+        renderChartMensal(saz);
+        renderChartSemanal(saz);
+        renderSummary(saz, previsaoData);
+        renderAlertasTable(previsaoData);
+
+      } catch (err) {
+        console.error('[Analises]', err);
+        Toast.error('Erro ao carregar análises');
+      }
+    }
+
+    // ── Filtros ──────────────────────────────────────────────────
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        filtroAtivo = btn.dataset.filter;
+        renderAlertasTable(previsaoData);
+      });
+    });
+
+    document.getElementById('btn-recalcular').addEventListener('click', carregar);
+
+    carregar();
+  </script>
+</body>
+</html>

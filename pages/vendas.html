@@ -5,25 +5,196 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vendas - SmartStock</title>
   <link rel="stylesheet" href="../styles/main.css">
+  <script>
+    // Verificação SÍNCRONA antes de renderizar
+    (function() {
+      const token = localStorage.getItem('access_token');
+      if (!token || token.trim() === '') {
+        window.location.replace('/login');
+      }
+    })();
+  </script>
+  <style>
+    .import-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 2000;
+      opacity: 0; visibility: hidden;
+      transition: all 0.2s;
+    }
+    .import-modal-overlay.active { opacity: 1; visibility: visible; }
+
+    .import-modal {
+      background: white;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl, 0 20px 60px rgba(0,0,0,0.2));
+      width: 100%; max-width: 560px;
+      padding: var(--spacing-xl);
+      transform: translateY(-16px);
+      transition: transform 0.2s;
+    }
+    .import-modal-overlay.active .import-modal { transform: translateY(0); }
+
+    .import-modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: var(--spacing-lg);
+    }
+    .import-modal-header h2 { font-size: 1.2rem; font-weight: 700; }
+    .import-close-btn {
+      background: none; border: none; font-size: 1.4rem;
+      cursor: pointer; color: var(--gray-400); line-height: 1;
+    }
+    .import-close-btn:hover { color: var(--gray-700); }
+
+    .drop-zone {
+      border: 2px dashed var(--gray-300);
+      border-radius: var(--radius-lg);
+      padding: 2.5rem var(--spacing-lg);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--gray-50, #f9fafb);
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--primary);
+      background: rgba(59,130,246,0.04);
+    }
+    .drop-zone-icon { font-size: 2.5rem; margin-bottom: var(--spacing-md); }
+    .drop-zone p { color: var(--gray-600); font-size: 0.9rem; margin: 0; }
+    .drop-zone span { color: var(--primary); font-weight: 600; }
+    .drop-zone small { display: block; margin-top: 6px; color: var(--gray-400); font-size: 0.78rem; }
+
+    .file-selected {
+      display: none;
+      align-items: center; gap: var(--spacing-md);
+      background: var(--gray-50, #f9fafb);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-md) var(--spacing-lg);
+      margin-top: var(--spacing-md);
+    }
+    .file-selected.show { display: flex; }
+    .file-selected-name { font-size: 0.875rem; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-remove-btn { background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 1.1rem; }
+    .file-remove-btn:hover { color: var(--error); }
+
+    .import-format-guide {
+      margin-top: var(--spacing-lg);
+      padding: var(--spacing-md);
+      background: #eff6ff;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      color: #1d4ed8;
+    }
+    .import-format-guide strong { display: block; margin-bottom: 4px; }
+    .import-format-guide code {
+      background: rgba(29,78,216,0.1); border-radius: 3px;
+      padding: 1px 5px; font-family: monospace;
+    }
+
+    .import-progress {
+      display: none;
+      margin-top: var(--spacing-md);
+    }
+    .import-progress.show { display: block; }
+    .progress-bar-track {
+      height: 6px; background: var(--gray-200);
+      border-radius: 99px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; background: var(--primary);
+      border-radius: 99px;
+      width: 0%; transition: width 0.3s;
+      animation: indeterminate 1.2s ease infinite;
+    }
+    @keyframes indeterminate {
+      0%   { width: 0%; margin-left: 0%; }
+      50%  { width: 60%; margin-left: 20%; }
+      100% { width: 0%; margin-left: 100%; }
+    }
+    .progress-label { font-size: 0.8rem; color: var(--gray-600); margin-top: 6px; text-align: center; }
+
+    .import-result {
+      display: none;
+      margin-top: var(--spacing-md);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+    }
+    .import-result.show { display: block; }
+    .import-result.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .import-result.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .import-modal-footer {
+      display: flex; justify-content: flex-end; gap: var(--spacing-md);
+      margin-top: var(--spacing-xl);
+    }
+    .btn-download-template {
+      font-size: 0.8rem; color: var(--primary);
+      background: none; border: 1px solid var(--primary);
+      border-radius: var(--radius-md); padding: 0.4rem 0.75rem;
+      cursor: pointer; margin-right: auto;
+      transition: all 0.15s;
+    }
+    .btn-download-template:hover { background: var(--primary); color: white; }
+  </style>
 </head>
 <body>
   <nav id="navbar"></nav>
 
-  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
-    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
-    <a href="./fornecedores.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Fornecedores</a>
-    <a href="./funcionarios.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Funcionários</a>
-    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
-    <a href="./vendas.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Vendas</a>
-    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
-    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
+  <!-- Modal de Importação -->
+  <div class="import-modal-overlay" id="import-overlay">
+    <div class="import-modal">
+      <div class="import-modal-header">
+        <h2>Importar Vendas</h2>
+        <button class="import-close-btn" id="import-close-btn">✕</button>
+      </div>
+
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-zone-icon">📂</div>
+        <p>Arraste o arquivo aqui ou <span>clique para selecionar</span></p>
+        <small>Formatos aceitos: CSV (.csv) ou Excel (.xlsx, .xls)</small>
+        <input type="file" id="import-file-input" accept=".csv,.xlsx,.xls" style="display:none">
+      </div>
+
+      <div class="file-selected" id="file-selected">
+        <span style="font-size:1.3rem">📄</span>
+        <span class="file-selected-name" id="file-selected-name"></span>
+        <button class="file-remove-btn" id="file-remove-btn" title="Remover arquivo">✕</button>
+      </div>
+
+      <div class="import-format-guide">
+        <strong>Colunas esperadas no arquivo:</strong>
+        <code>data</code> &nbsp;
+        <code>mercadoId</code> &nbsp;
+        <code>quantidadeItens</code> &nbsp;
+        <code>total</code> &nbsp;
+        <code>status</code>
+      </div>
+
+      <div class="import-progress" id="import-progress">
+        <div class="progress-bar-track"><div class="progress-bar-fill"></div></div>
+        <div class="progress-label">Enviando arquivo...</div>
+      </div>
+
+      <div class="import-result" id="import-result"></div>
+
+      <div class="import-modal-footer">
+        <button class="btn-download-template" id="btn-download-template">⬇ Baixar modelo CSV</button>
+        <button class="btn btn-secondary" id="import-cancel-btn">Cancelar</button>
+        <button class="btn btn-primary" id="import-submit-btn" disabled>Importar</button>
+      </div>
+    </div>
   </div>
 
   <div style="padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl);">
       <h1 style="font-size: 1.875rem;">Vendas</h1>
-      <button class="btn btn-primary" id="nova-venda-btn">+ Nova Venda</button>
+      <div style="display: flex; gap: var(--spacing-md);">
+        <button class="btn btn-secondary" id="importar-btn">⬆ Importar</button>
+        <button class="btn btn-primary" id="nova-venda-btn">+ Nova Venda</button>
+      </div>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--spacing-lg); margin-bottom: var(--spacing-2xl);">
@@ -49,31 +220,189 @@
   <script type="module">
     import Navbar from '../js/components/Navbar.js';
     import AuthService from '../js/services/AuthService.js';
+    import VendaService from '../js/services/VendaService.js';
+    import APIService from '../js/services/APIService.js';
+    import APIConfig from '../js/config/APIConfig.js';
+    import DataTable from '../js/components/DataTable.js';
     import Toast from '../js/components/Toast.js';
-
-    if (!AuthService.isAuthenticated()) {
-      window.location.href = './tela_login.html';
-    }
 
     const navbar = new Navbar();
     navbar.render();
 
-    // Simular dados
-    const mockVendas = [
-      { id: 1, data: '2024-04-09', total: 150.50, itens: 3, mercado: 'Mercado 1', status: 'Concluída' },
-      { id: 2, data: '2024-04-08', total: 280.25, itens: 5, mercado: 'Mercado 2', status: 'Concluída' },
-      { id: 3, data: '2024-04-07', total: 450.00, itens: 7, mercado: 'Mercado 1', status: 'Concluída' },
-    ];
+    // ─── Utilitários ────────────────────────────────────────────
+    function formatarMoeda(valor) {
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
+    }
 
-    const totalVendas = mockVendas.length;
-    const faturamento = mockVendas.reduce((acc, v) => acc + v.total, 0);
-    const ticketMedio = faturamento / totalVendas;
+    function formatarData(data) {
+      if (!data) return '-';
+      return new Date(data).toLocaleDateString('pt-BR');
+    }
 
-    document.getElementById('total-vendas').textContent = totalVendas;
-    document.getElementById('faturamento-total').textContent = `R$ ${faturamento.toFixed(2)}`;
-    document.getElementById('ticket-medio').textContent = `R$ ${ticketMedio.toFixed(2)}`;
+    // ─── Carregar vendas ─────────────────────────────────────────
+    async function loadVendas() {
+      const result = await VendaService.listar();
 
-    Toast.success('Vendas carregadas com sucesso');
+      if (result.success) {
+        const data = result.data || [];
+        const totalVendas = data.length;
+        const faturamento = data.reduce((acc, v) => acc + parseFloat(v.total || v.valorTotal || 0), 0);
+        const ticketMedio = totalVendas > 0 ? faturamento / totalVendas : 0;
+
+        document.getElementById('total-vendas').textContent = totalVendas;
+        document.getElementById('faturamento-total').textContent = formatarMoeda(faturamento);
+        document.getElementById('ticket-medio').textContent = formatarMoeda(ticketMedio);
+
+        const table = new DataTable({
+          containerId: 'vendas-table',
+          columns: [
+            { label: 'Data', field: 'data', format: (v) => formatarData(v) },
+            { label: 'Mercado', field: 'mercado.nome' },
+            { label: 'Itens', field: 'quantidadeItens' },
+            { label: 'Total', field: 'total', format: (v) => formatarMoeda(v) },
+            { label: 'Status', field: 'status' },
+          ],
+          data,
+          onView: (id) => Toast.info(`Visualizando venda #${id}`),
+          pageSize: 10,
+        });
+
+        table.render();
+      } else {
+        Toast.error(result.message || 'Erro ao carregar vendas');
+      }
+    }
+
+    // ─── Modal de Importação ─────────────────────────────────────
+    const overlay      = document.getElementById('import-overlay');
+    const dropZone     = document.getElementById('drop-zone');
+    const fileInput    = document.getElementById('import-file-input');
+    const fileSelected = document.getElementById('file-selected');
+    const fileName     = document.getElementById('file-selected-name');
+    const removeBtn    = document.getElementById('file-remove-btn');
+    const submitBtn    = document.getElementById('import-submit-btn');
+    const progress     = document.getElementById('import-progress');
+    const resultEl     = document.getElementById('import-result');
+
+    let selectedFile = null;
+
+    function openModal() {
+      overlay.classList.add('active');
+      resetModal();
+    }
+
+    function closeModal() {
+      overlay.classList.remove('active');
+    }
+
+    function resetModal() {
+      selectedFile = null;
+      fileInput.value = '';
+      fileSelected.classList.remove('show');
+      submitBtn.disabled = true;
+      progress.classList.remove('show');
+      resultEl.classList.remove('show', 'success', 'error');
+      resultEl.textContent = '';
+    }
+
+    function setFile(file) {
+      const allowed = ['text/csv', 'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+      const extOk = /\.(csv|xlsx|xls)$/i.test(file.name);
+
+      if (!extOk) {
+        Toast.error('Formato inválido. Use CSV ou Excel (.xlsx, .xls)');
+        return;
+      }
+
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileSelected.classList.add('show');
+      submitBtn.disabled = false;
+      resultEl.classList.remove('show');
+    }
+
+    // Abrir modal
+    document.getElementById('importar-btn').addEventListener('click', openModal);
+    document.getElementById('import-close-btn').addEventListener('click', closeModal);
+    document.getElementById('import-cancel-btn').addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+    // Clique na drop zone → abre file picker
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) setFile(e.target.files[0]);
+    });
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+    });
+
+    // Remover arquivo selecionado
+    removeBtn.addEventListener('click', resetModal);
+
+    // Baixar modelo CSV
+    document.getElementById('btn-download-template').addEventListener('click', () => {
+      const csv = 'data,mercadoId,quantidadeItens,total,status\n2024-04-10,1,3,150.50,Concluída\n2024-04-11,2,5,280.25,Concluída\n';
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'modelo_vendas.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Enviar arquivo
+    submitBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      submitBtn.disabled = true;
+      progress.classList.add('show');
+      resultEl.classList.remove('show');
+
+      try {
+        const isExcel = /\.(xlsx|xls)$/i.test(selectedFile.name);
+        const endpoint = isExcel
+          ? APIConfig.ENDPOINTS.IMPORTACAO.EXCEL
+          : APIConfig.ENDPOINTS.IMPORTACAO.CSV;
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        const result = await APIService.upload(endpoint, formData);
+
+        progress.classList.remove('show');
+        resultEl.classList.add('show', 'success');
+
+        const importados = result.importados ?? result.total ?? result.count ?? '?';
+        const erros = result.erros ?? result.errors ?? 0;
+        resultEl.innerHTML = `
+          <strong>✓ Importação concluída!</strong><br>
+          ${importados} registro(s) importado(s)${erros > 0 ? ` · ${erros} com erro` : ''}.
+        `;
+
+        Toast.success('Arquivo importado com sucesso!');
+
+        setTimeout(() => {
+          closeModal();
+          loadVendas();
+        }, 2000);
+
+      } catch (error) {
+        progress.classList.remove('show');
+        resultEl.classList.add('show', 'error');
+        resultEl.innerHTML = `<strong>✗ Erro na importação</strong><br>${error.message || 'Verifique o formato do arquivo e tente novamente.'}`;
+        submitBtn.disabled = false;
+      }
+    });
+
+    // ─── Inicializar ─────────────────────────────────────────────
+    loadVendas();
   </script>
 </body>
 </html>

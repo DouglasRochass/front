@@ -5,85 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Produtos - SmartStock</title>
   <link rel="stylesheet" href="../styles/main.css">
+  <script>
+    // Verificação SÍNCRONA antes de renderizar
+    (function() {
+      const token = localStorage.getItem('access_token');
+      if (!token || token.trim() === '') {
+        window.location.replace('/login');
+      }
+    })();
+  </script>
   <style>
-    .page-container {
-      padding: var(--spacing-lg);
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--spacing-xl);
-    }
-
-    .page-header h1 {
-      font-size: 1.875rem;
-    }
-
-    .page-actions {
-      display: flex;
-      gap: var(--spacing-md);
-    }
-
-    .table-wrapper {
-      background: white;
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-md);
-      overflow: hidden;
-    }
-
-    .table-controls {
-      padding: var(--spacing-lg);
-      border-bottom: 1px solid var(--gray-200);
-      display: flex;
-      gap: var(--spacing-md);
-      align-items: center;
-    }
-
-    .search-input {
-      flex: 1;
-      max-width: 300px;
-      padding: 0.625rem;
-      border: 1px solid var(--gray-300);
-      border-radius: var(--radius-md);
-      font-size: 0.938rem;
-    }
-
-    .data-table-wrapper {
-      overflow-x: auto;
-    }
-
-    .actions {
-      white-space: nowrap;
-    }
-
-    .modal-wrapper {
-      padding: var(--spacing-lg);
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: var(--spacing-md);
-    }
+    .page-container { padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl); }
+    .page-header h1 { font-size: 1.875rem; }
+    .page-actions { display: flex; gap: var(--spacing-md); }
+    .table-wrapper { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
   </style>
 </head>
 <body>
   <nav id="navbar"></nav>
-
-  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-    <a href="./dashboard.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Dashboard</a>
-    <a href="./produtos.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Produtos</a>
-    <a href="./fornecedores.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Fornecedores</a>
-    <a href="./funcionarios.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Funcionários</a>
-    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
-    <a href="./vendas.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Vendas</a>
-    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
-    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
-  </div>
 
   <div class="page-container">
     <div class="page-header">
@@ -110,15 +50,8 @@
     import FormBuilder from '../js/components/FormBuilder.js';
     import Toast from '../js/components/Toast.js';
 
-    // Verificar autenticação
-    if (!AuthService.isAuthenticated()) {
-      setTimeout(() => window.location.href = './tela_login.html', 1500);
-    }
-
-    // Verificar permissão (somente gerentes podem criar/editar)
     const isGestor = AuthService.isGestor();
 
-    // Renderizar navbar
     const navbar = new Navbar();
     navbar.render();
 
@@ -126,7 +59,7 @@
 
     async function loadProdutos() {
       const result = await ProdutoService.listar();
-      
+
       if (result.success) {
         table = new DataTable({
           containerId: 'produtos-table',
@@ -214,9 +147,7 @@
       const modal = new Modal({
         title,
         size: 'lg',
-        buttons: [
-          { text: 'Cancelar', class: 'btn-secondary', onClick: () => modal.close() },
-        ],
+        buttons: [{ text: 'Cancelar', class: 'btn-secondary', onClick: () => modal.close() }],
       });
 
       modal.open();
@@ -226,13 +157,11 @@
         if (modalBody) {
           form.render(modalBody);
         } else {
-          console.error('[showFormModal] Modal body não encontrado');
           Toast.error('Erro ao abrir formulário');
         }
       }, 100);
     }
 
-    // Event listeners
     document.getElementById('novo-produto-btn').addEventListener('click', () => {
       if (!isGestor) {
         Toast.warning('Apenas gerentes podem criar produtos');
@@ -241,7 +170,6 @@
       showFormModal('Novo Produto', null, false);
     });
 
-    // Carregar produtos inicialmente
     loadProdutos();
   </script>
 </body>

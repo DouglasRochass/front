@@ -1,5 +1,5 @@
 /**
- * Serviço de Fornecedores
+  * Serviço de Fornecedores
  */
 
 import APIService from './APIService.js';
@@ -12,12 +12,12 @@ class FornecedorService {
       console.log('[FornecedorService.listar] Response completo:', response);
       console.log('[FornecedorService.listar] Tipo:', typeof response);
       console.log('[FornecedorService.listar] É Array?', Array.isArray(response));
-      
-      let fornecedores = Array.isArray(response) ? response : 
+
+      let fornecedores = Array.isArray(response) ? response :
                         response.data && Array.isArray(response.data) ? response.data :
                         response.content && Array.isArray(response.content) ? response.content :
                         [];
-      
+
       return { success: true, data: fornecedores };
     } catch (error) {
       console.error('[FornecedorService.listar] Erro:', error);
@@ -30,7 +30,6 @@ class FornecedorService {
       const endpoint = APIConfig.ENDPOINTS.FORNECEDORES.GET.replace(':id', id);
       const response = await APIService.get(endpoint);
       console.log('[FornecedorService.obter] Response:', response);
-      
       const fornecedor = response.data || response;
       return { success: true, data: fornecedor };
     } catch (error) {
@@ -78,13 +77,9 @@ class FornecedorService {
     try {
       const endpoint = APIConfig.ENDPOINTS.FORNECEDORES.BY_NOME.replace(':nome', nome);
       const response = await APIService.get(endpoint, filtros);
-      console.log('[FornecedorService.buscarPorNome] Response:', response);
-      
-      let fornecedores = Array.isArray(response) ? response : 
+      let fornecedores = Array.isArray(response) ? response :
                         response.data && Array.isArray(response.data) ? response.data :
-                        response.content && Array.isArray(response.content) ? response.content :
-                        [];
-      
+                        response.content && Array.isArray(response.content) ? response.content : [];
       return { success: true, data: fornecedores };
     } catch (error) {
       console.error('[FornecedorService.buscarPorNome] Erro:', error);
@@ -96,13 +91,9 @@ class FornecedorService {
     try {
       const endpoint = APIConfig.ENDPOINTS.FORNECEDORES.BY_EMAIL.replace(':email', email);
       const response = await APIService.get(endpoint, filtros);
-      console.log('[FornecedorService.buscarPorEmail] Response:', response);
-      
-      let fornecedores = Array.isArray(response) ? response : 
+      let fornecedores = Array.isArray(response) ? response :
                         response.data && Array.isArray(response.data) ? response.data :
-                        response.content && Array.isArray(response.content) ? response.content :
-                        [];
-      
+                        response.content && Array.isArray(response.content) ? response.content : [];
       return { success: true, data: fornecedores };
     } catch (error) {
       console.error('[FornecedorService.buscarPorEmail] Erro:', error);

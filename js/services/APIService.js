@@ -1,6 +1,6 @@
 /**
- * Serviço principal para consumo de API
- * Gerencia requisições HTTP, tokens e tratamento de erros
+  * Serviço principal para consumo de API
+  * Gerencia requisições HTTP, tokens e tratamento de erros
  */
 
 import APIConfig from '../config/APIConfig.js';
@@ -13,23 +13,14 @@ class APIService {
     this.refreshSubscribers = [];
   }
 
-  /**
-   * Obtém token armazenado
-   */
   getStoredToken() {
     return localStorage.getItem('access_token') || null;
   }
 
-  /**
-   * Obtém refresh token armazenado
-   */
   getStoredRefreshToken() {
     return localStorage.getItem('refresh_token') || null;
   }
 
-  /**
-   * Salva tokens no localStorage
-   */
   setTokens(accessToken, refreshToken) {
     this.token = accessToken;
     this.refreshToken = refreshToken;
@@ -39,9 +30,6 @@ class APIService {
     }
   }
 
-  /**
-   * Remove tokens do armazenamento
-   */
   clearTokens() {
     this.token = null;
     this.refreshToken = null;
@@ -50,13 +38,9 @@ class APIService {
     localStorage.removeItem('user');
   }
 
-  /**
-   * Prepara headers para requisição
-   */
   getHeaders(customHeaders = {}) {
     const headers = { ...APIConfig.HEADERS, ...customHeaders };
-    
-    // Verificar token no momento da requisição (não apenas na inicialização)
+
     const currentToken = localStorage.getItem('access_token');
     if (currentToken) {
       headers['Authorization'] = `Bearer ${currentToken}`;
@@ -65,7 +49,6 @@ class APIService {
       console.warn('[APIService] ⚠️ Nenhum token encontrado no localStorage');
     }
 
-    // Adiciona headers customizados do usuário
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.cargo) {
       headers['gerente-cargo'] = user.cargo;
@@ -73,13 +56,10 @@ class APIService {
     if (user.mercadoId) {
       headers['usuario-mercado-id'] = user.mercadoId;
     }
-    
+
     return headers;
   }
 
-  /**
-   * Faz requisição HTTP genérica
-   */
   async request(method, url, data = null, customHeaders = {}) {
     const options = {
       method,
@@ -93,10 +73,9 @@ class APIService {
     try {
       console.log(`[APIService] ${method} ${url}`);
       const response = await fetch(url, options);
-      
+
       console.log(`[APIService] Response Status: ${response.status} ${response.statusText}`);
 
-      // Trata token expirado
       if (response.status === 401 && this.refreshToken && !this.isRefreshing) {
         console.warn('[APIService] Token expirado, tentando renovar...');
         return this.handleTokenRefresh(method, url, data, customHeaders);
@@ -113,7 +92,6 @@ class APIService {
         };
       }
 
-      // Log para debug
       console.log(`[API ${method}] ${url}`, { sucesso: true, dados: result.data?.length || 'N/A' });
 
       return result;
@@ -123,9 +101,6 @@ class APIService {
     }
   }
 
-  /**
-   * Trata renovação de token
-   */
   async handleTokenRefresh(method, url, data, customHeaders) {
     if (this.isRefreshing) {
       return new Promise((resolve, reject) => {
@@ -145,14 +120,12 @@ class APIService {
 
       if (refreshResult.token) {
         this.setTokens(refreshResult.token, refreshResult.refreshToken);
-        
-        // Retenta requisição original
+
         const retryResult = await this.request(method, url, data, customHeaders);
-        
-        // Notifica subscribers
+
         this.refreshSubscribers.forEach(sub => sub.resolve(retryResult));
         this.refreshSubscribers = [];
-        
+
         return retryResult;
       } else {
         throw new Error('Falha ao renovar token');
@@ -161,14 +134,13 @@ class APIService {
       this.clearTokens();
       this.refreshSubscribers.forEach(sub => sub.reject(error));
       this.refreshSubscribers = [];
-      window.location.href = '/login.html';
+      window.location.href = './tela_login.html';
       throw error;
     } finally {
       this.isRefreshing = false;
     }
   }
 
-  // ========== GET ==========
   get(endpoint, params = {}) {
     let url = `${APIConfig.BASE_URL}${endpoint}`;
     const queryString = new URLSearchParams(params).toString();
@@ -176,35 +148,30 @@ class APIService {
     return this.request('GET', url);
   }
 
-  // ========== POST ==========
   post(endpoint, data) {
     const url = `${APIConfig.BASE_URL}${endpoint}`;
     return this.request('POST', url, data);
   }
 
-  // ========== PUT ==========
   put(endpoint, data) {
     const url = `${APIConfig.BASE_URL}${endpoint}`;
     return this.request('PUT', url, data);
   }
 
-  // ========== PATCH ==========
   patch(endpoint, data) {
     const url = `${APIConfig.BASE_URL}${endpoint}`;
     return this.request('PATCH', url, data);
   }
 
-  // ========== DELETE ==========
   delete(endpoint) {
     const url = `${APIConfig.BASE_URL}${endpoint}`;
     return this.request('DELETE', url);
   }
 
-  // ========== UPLOAD (FormData) ==========
   async upload(endpoint, formData) {
     const url = `${APIConfig.BASE_URL}${endpoint}`;
     const headers = { ...this.getHeaders() };
-    delete headers['Content-Type']; // Remove para deixar o navegador definir
+    delete headers['Content-Type'];
 
     try {
       const response = await fetch(url, {
@@ -222,5 +189,4 @@ class APIService {
   }
 }
 
-// Exporta instância única (Singleton)
 export default new APIService();

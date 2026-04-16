@@ -1,97 +1,117 @@
-/**
- * Servidor Local Simples para Desenvolvimento
- * 
- * Uso: node server.js
- * Acesse: http://localhost:3000
- */
-
-const http = require('http');
-const fs = require('fs');
+const express = require('express');
 const path = require('path');
+const cors = require('cors');
+const compression = require('compression');
+const cookieParser = require('cookie-parser');
 
-const PORT = 3000;
-const MIME_TYPES = {
-  '.html': 'text/html',
-  '.js': 'text/javascript',
-  '.css': 'text/css',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-};
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const server = http.createServer((req, res) => {
-  // Remover query string da URL
-  const urlPath = req.url.split('?')[0];
-  
-  // Resolver caminho
-  let filePath = path.join(__dirname, urlPath === '/' ? 'index.html' : urlPath);
+// Middleware
+app.use(compression());
+app.use(cors());
+app.use(express.json());
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname)));
 
-  // Proteger acesso fora do diretório
-  const realPath = path.resolve(filePath);
-  const rootPath = path.resolve(__dirname);
-  if (!realPath.startsWith(rootPath)) {
-    res.writeHead(403, { 'Content-Type': 'text/plain' });
-    res.end('Acesso Negado');
-    return;
-  }
+// Páginas protegidas que precisam de autenticação (verificada no cliente via dashboard.html)
+const protectedPages = [
+  'dashboard',
+  'produtos',
+  'fornecedores',
+  'funcionarios',
+  'mercados',
+  'vendas',
+  'analises',
+  'cadastro-produtos'
+];
 
-  // Verificar se arquivo existe
-  fs.stat(filePath, (err, stats) => {
+// Páginas públicas (login, recuperação, etc)
+const publicPages = [
+  'login',
+  'tela_login',
+  'recuperar-senha',
+  'recuperar_login',
+  'redefinir-senha',
+  'redefinir_senha',
+  'verificar-email',
+  'verificar_email',
+  'senha_atualizada'
+];
+
+// Função auxiliar para servir arquivo HTML
+function serveHtmlFile(req, res, filename) {
+  const filepath = path.join(__dirname, 'pages', `${filename}.html`);
+  res.sendFile(filepath, (err) => {
     if (err) {
-      // Se for diretório, tentar index.html
-      if (err.code === 'ENOENT') {
-        const indexPath = path.join(filePath, 'index.html');
-        fs.stat(indexPath, (err2) => {
-          if (!err2) {
-            serveFile(indexPath, res);
-          } else {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('404 - Arquivo não encontrado');
-          }
-        });
-      } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Erro do servidor');
-      }
-      return;
+      console.error(`Erro ao servir ${filename}:`, err);
+      res.status(404).sendFile(path.join(__dirname, 'pages', 'tela_login.html'));
     }
-
-    // Se for diretório, tentar index.html
-    if (stats.isDirectory()) {
-      filePath = path.join(filePath, 'index.html');
-    }
-
-    serveFile(filePath, res);
   });
+}
 
-  function serveFile(filePath, res) {
-    fs.readFile(filePath, (err, data) => {
-      if (err) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Erro ao ler arquivo');
-        return;
-      }
-
-      const ext = path.extname(filePath).toLowerCase();
-      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
-
-      // Headers para permitir CORS
-      res.writeHead(200, {
-        'Content-Type': mimeType,
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      });
-      res.end(data);
-    });
-  }
+// Rota para servir arquivos HTML
+app.get('/', (req, res) => {
+  // Sempre servir dashboard - autenticação é feita no cliente
+  serveHtmlFile(req, res, 'dashboard');
 });
 
-server.listen(PORT, () => {
-  console.log(`\n✅ Servidor rodando em http://localhost:${PORT}`);
-  console.log(`📂 Diretório: ${__dirname}`);
-  console.log(`\n🔗 Abra http://localhost:${PORT}/index.html no navegador\n`);
+app.get('/login', (req, res) => {
+  serveHtmlFile(req, res, 'tela_login');
+});
+
+app.get('/recuperar-senha', (req, res) => {
+  serveHtmlFile(req, res, 'recuperar_login');
+});
+
+app.get('/redefinir-senha', (req, res) => {
+  serveHtmlFile(req, res, 'redefinir_senha');
+});
+
+app.get('/verificar-email', (req, res) => {
+  serveHtmlFile(req, res, 'verificar_email');
+});
+
+app.get('/produtos', (req, res) => {
+  serveHtmlFile(req, res, 'produtos');
+});
+
+app.get('/cadastro-produtos', (req, res) => {
+  serveHtmlFile(req, res, 'cadastro_produtos');
+});
+
+app.get('/fornecedores', (req, res) => {
+  serveHtmlFile(req, res, 'fornecedores');
+});
+
+app.get('/funcionarios', (req, res) => {
+  serveHtmlFile(req, res, 'funcionarios');
+});
+
+app.get('/mercados', (req, res) => {
+  serveHtmlFile(req, res, 'mercados');
+});
+
+app.get('/vendas', (req, res) => {
+  serveHtmlFile(req, res, 'vendas');
+});
+
+app.get('/analises', (req, res) => {
+  serveHtmlFile(req, res, 'analises');
+});
+
+// Tratamento para rotas não encontradas
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'pages', 'tela_login.html'));
+});
+
+// Tratamento de erros
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Erro interno do servidor' });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
+  console.log(`📁 Diretório: ${__dirname}`);
 });

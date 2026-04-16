@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - SmartStock</title>
   <link rel="stylesheet" href="../styles/main.css">
+  <script>
+    // Verificação SÍNCRONA antes de renderizar - impede flash de conteúdo
+    (function() {
+      const token = localStorage.getItem('access_token');
+      if (!token || token.trim() === '') {
+        console.log('[Dashboard] Sem token, redirecionando para login...');
+        window.location.replace('/login');
+      }
+    })();
+  </script>
   <style>
     .dashboard-container {
       padding: var(--spacing-lg);
@@ -117,17 +127,6 @@
 <body>
   <nav id="navbar"></nav>
 
-  <div style="background: white; border-bottom: 1px solid #ddd; padding: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
-    <a href="./dashboard.html" style="text-decoration: none; color: #3B82F6; font-weight: 600;">Dashboard</a>
-    <a href="./produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Produtos</a>
-    <a href="./fornecedores.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Fornecedores</a>
-    <a href="./funcionarios.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Funcionários</a>
-    <a href="./mercados.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Mercados</a>
-    <a href="./vendas.html" style="text-decoration: none; color: #6B7280; font-weight: 500;">Vendas</a>
-    <a href="./cadastro_produtos.html" style="text-decoration: none; color: #6B7280; font-weight: 500; margin-left: auto;">Novo Produto</a>
-    <a href="./tela_login.html" style="text-decoration: none; color: #EF4444; font-weight: 500;">Sair</a>
-  </div>
-
   <div class="dashboard-container">
     <div class="page-header">
       <h1>Dashboard</h1>
@@ -187,30 +186,19 @@
 
   <script type="module">
     import Navbar from '../js/components/Navbar.js';
-    import AuthService from '../js/services/AuthService.js';
     import ProdutoService from '../js/services/ProdutoService.js';
     import FornecedorService from '../js/services/FornecedorService.js';
     import MercadoService from '../js/services/MercadoService.js';
     import Toast from '../js/components/Toast.js';
 
-    // Verificar autenticação
-    if (!AuthService.isAuthenticated()) {
-      window.location.href = './tela_login.html';
-    }
-
-    // Debug: Verificar token
-    console.log('=== DEBUG DASHBOARD ===');
-    console.log('Token no localStorage:', localStorage.getItem('access_token') ? '✓ Presente' : '✗ Ausente');
-    console.log('User no localStorage:', localStorage.getItem('user') ? '✓ Presente' : '✗ Ausente');
-    console.log('APIService.token:', APIService.token ? '✓ Presente' : '✗ Ausente');
-    console.log('=======================');
+    console.log('=== DASHBOARD MÓDULO CARREGANDO ===');
 
     // Renderizar navbar
     const navbar = new Navbar();
     navbar.render();
 
-    // Carregar dados
-    async function loadDashboardData() {
+    // Função para carregar dados do dashboard
+    async function inicializarDashboard() {
       try {
         console.log('[Dashboard] Iniciando carregamento de dados...');
         
@@ -226,20 +214,21 @@
 
         if (produtos.success) {
           const data = produtos.data || [];
-          console.log('[Dashboard] Total de produtos:', data.length);
+          const emEstoque = data.filter(p => (p.quantidade ?? p.estoque ?? 0) > 10).length;
+          const baixoEstoque = data.filter(p => { const q = p.quantidade ?? p.estoque ?? 0; return q > 0 && q <= 10; }).length;
+          const semEstoque = data.filter(p => (p.quantidade ?? p.estoque ?? 0) === 0).length;
           document.getElementById('total-produtos').textContent = data.length;
+          document.getElementById('produtos-estoque').textContent = emEstoque;
+          document.getElementById('produtos-baixo-estoque').textContent = baixoEstoque;
+          document.getElementById('produtos-sem-estoque').textContent = semEstoque;
         }
 
         if (fornecedores.success) {
-          const data = fornecedores.data || [];
-          console.log('[Dashboard] Total de fornecedores:', data.length);
-          document.getElementById('total-fornecedores').textContent = data.length;
+          document.getElementById('total-fornecedores').textContent = (fornecedores.data || []).length;
         }
 
         if (mercados.success) {
-          const data = mercados.data || [];
-          console.log('[Dashboard] Total de mercados:', data.length);
-          document.getElementById('total-mercados').textContent = data.length;
+          document.getElementById('total-mercados').textContent = (mercados.data || []).length;
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
@@ -247,7 +236,12 @@
       }
     }
 
-    loadDashboardData();
+    // Executar quando o DOM está pronto
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', inicializarDashboard);
+    } else {
+      inicializarDashboard();
+    }
   </script>
 </body>
 </html>

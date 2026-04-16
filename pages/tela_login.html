@@ -5,6 +5,12 @@
   <title>SmartStock - Login</title>
   <link rel="stylesheet" href="../styles/main.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script>
+    // Se já está autenticado, redirecionar para dashboard
+    if (localStorage.getItem('access_token')) {
+      window.location.href = '/';
+    }
+  </script>
   <style>
     .mensagem-aviso {
       animation: slideIn 0.3s ease-in-out;
@@ -38,7 +44,7 @@
 
   <div class="login-wrapper">
 
-<img src="../../logo.png" class="logo">
+<img src="../logo.png" class="logo">
 
     <div class="login-container">
 
@@ -185,7 +191,7 @@
           
           setTimeout(() => {
             console.log('[Login] Iniciando redirecionamento...');
-            window.location.href = './dashboard.html';
+            window.location.href = '/';
           }, 1500);
         });
       }

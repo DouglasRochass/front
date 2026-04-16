@@ -1,6 +1,6 @@
 /**
- * Serviço de Autenticação
- * Gerencia login, logout e status de autenticação
+  * Serviço de Autenticação
+  * Gerencia login, logout e status de autenticação
  */
 
 import APIService from './APIService.js';
@@ -11,47 +11,30 @@ class AuthService {
     this.user = this.getStoredUser();
   }
 
-  /**
-   * Obtém usuário armazenado
-   */
   getStoredUser() {
     const userJson = localStorage.getItem('user');
     return userJson ? JSON.parse(userJson) : null;
   }
 
-  /**
-   * Salva usuário no armazenamento
-   */
   setUser(user) {
     this.user = user;
     localStorage.setItem('user', JSON.stringify(user));
   }
 
-  /**
-   * Remove usuário do armazenamento
-   */
   clearUser() {
     this.user = null;
     localStorage.removeItem('user');
   }
 
-  /**
-   * Verifica se usuário está autenticado
-   */
   isAuthenticated() {
-    return !!this.user && !!APIService.token;
+    const token = localStorage.getItem('access_token');
+    return !!token;
   }
 
-  /**
-   * Obtém usuário atual
-   */
   getCurrentUser() {
     return this.user;
   }
 
-  /**
-   * Realiza login
-   */
   async login(email, senha) {
     try {
       const response = await APIService.post(APIConfig.ENDPOINTS.AUTH.LOGIN, {
@@ -87,9 +70,6 @@ class AuthService {
     }
   }
 
-  /**
-   * Realiza logout
-   */
   async logout() {
     try {
       await APIService.post(APIConfig.ENDPOINTS.AUTH.LOGOUT, {});
@@ -101,9 +81,6 @@ class AuthService {
     }
   }
 
-  /**
-   * Recupera senha (primeira etapa)
-   */
   async recuperarSenha(email) {
     try {
       const response = await APIService.post(APIConfig.ENDPOINTS.USUARIOS.RECUPERAR_SENHA, {
@@ -124,9 +101,6 @@ class AuthService {
     }
   }
 
-  /**
-   * Redefine senha
-   */
   async redefinirSenha(token, novaSenha, confirmaSenha) {
     if (novaSenha !== confirmaSenha) {
       return {
@@ -156,20 +130,13 @@ class AuthService {
     }
   }
 
-  /**
-   * Verifica se usuário é gestor
-   */
   isGestor() {
     return this.user?.cargo === 'GERENTE' || this.user?.cargo === 'MASTER';
   }
 
-  /**
-   * Verifica se usuário é master
-   */
   isMaster() {
     return this.user?.cargo === 'MASTER';
   }
 }
 
-// Exporta instância única (Singleton)
 export default new AuthService();

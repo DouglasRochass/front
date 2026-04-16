@@ -6,28 +6,19 @@
     <meta name="api-base-url" content="http://localhost:8080/api">
     <title>Cadastro de produtos - SmartEstok</title>
     <link rel="stylesheet" href="../styles/main.css">
-    <script type="module" src="../js/services/ProdutoService.js"></script>
+    <script>
+      // Verificação SÍNCRONA antes de renderizar
+      (function() {
+        const token = localStorage.getItem('access_token');
+        if (!token || token.trim() === '') {
+          window.location.replace('/login');
+        }
+      })();
+    </script>
   </head>
   
-  <body data-api-url="http://localhost:8080/api/">
-    mercado_id
-    <header>
-      <nav>
-        <button type="button" aria-label="Menu de navegação">☰</button>
-        <div style="display: flex; gap: 1rem;">
-          <a href="./dashboard.html" aria-label="Ir para Dashboard">Dashboard</a>
-          <a href="./produtos.html" aria-label="Ir para Produtos">Produtos</a>
-          <a href="./fornecedores.html" aria-label="Ir para Fornecedores">Fornecedores</a>
-          <a href="./funcionarios.html" aria-label="Ir para Funcionários">Funcionários</a>
-          <a href="./mercados.html" aria-label="Ir para Mercados">Mercados</a>
-          <a href="./vendas.html" aria-label="Ir para Vendas">Vendas</a>
-        </div>
-        <div>
-          <a href="#perfil" aria-label="Acessar perfil do usuário">Perfil</a>
-          <a href="./tela_login.html" aria-label="Fazer logout">Sair</a>
-        </div>
-      </nav>
-    </header>
+  <body>
+    <nav id="navbar"></nav>
     
     <main>
       <section>
@@ -140,15 +131,14 @@
     </main>
 
     <script type="module">
+      import Navbar from '../js/components/Navbar.js';
       import AuthService from '../js/services/AuthService.js';
       import ProdutoService from '../js/services/ProdutoService.js';
       import FornecedorService from '../js/services/FornecedorService.js';
       import Toast from '../js/components/Toast.js';
 
-      // Verificar autenticação
-      if (!AuthService.isAuthenticated()) {
-      setTimeout(() => window.location.href = './tela_login.html', 1500);
-      }
+
+      new Navbar().render();
 
       const form = document.getElementById('formCadastroProduto');
       const fornecedorSelect = document.getElementById('fornecedorId');
@@ -221,7 +211,7 @@
             
             // Redirecionar para lista de produtos após 2 segundos
             setTimeout(() => {
-              window.location.href = './produtos.html';
+              window.location.href = '/produtos';
             }, 2000);
           } else {
             Toast.error(result.message || 'Erro ao criar produto');
@@ -239,7 +229,7 @@
       // Cancelar
       function cancelarCadastro() {
         if (confirm('Deseja cancelar o cadastro?')) {
-          window.location.href = './produtos.html';
+          window.location.href = '/produtos';
         }
       }
 

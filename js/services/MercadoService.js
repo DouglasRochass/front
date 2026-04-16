@@ -1,5 +1,5 @@
 /**
- * Serviço de Mercados
+  * Serviço de Mercados
  */
 
 import APIService from './APIService.js';
@@ -12,12 +12,12 @@ class MercadoService {
       console.log('[MercadoService.listar] Response completo:', response);
       console.log('[MercadoService.listar] Tipo:', typeof response);
       console.log('[MercadoService.listar] É Array?', Array.isArray(response));
-      
-      let mercados = Array.isArray(response) ? response : 
+
+      let mercados = Array.isArray(response) ? response :
                     response.data && Array.isArray(response.data) ? response.data :
                     response.content && Array.isArray(response.content) ? response.content :
                     [];
-      
+
       return { success: true, data: mercados };
     } catch (error) {
       console.error('[MercadoService.listar] Erro:', error);
@@ -30,7 +30,6 @@ class MercadoService {
       const endpoint = APIConfig.ENDPOINTS.MERCADOS.GET.replace(':id', id);
       const response = await APIService.get(endpoint);
       console.log('[MercadoService.obter] Response:', response);
-      
       const mercado = response.data || response;
       return { success: true, data: mercado };
     } catch (error) {
