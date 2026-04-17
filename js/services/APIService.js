@@ -44,19 +44,49 @@ class APIService {
     const currentToken = localStorage.getItem('access_token');
     if (currentToken) {
       headers['Authorization'] = `Bearer ${currentToken}`;
-      console.log(`[APIService] Token adicionado ao header: ${currentToken.substring(0, 20)}...`);
+      console.log(`[APIService] ✅ Token adicionado ao header: ${currentToken.substring(0, 20)}...`);
     } else {
       console.warn('[APIService] ⚠️ Nenhum token encontrado no localStorage');
     }
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.cargo) {
-      headers['gerente-cargo'] = user.cargo;
-    }
-    if (user.mercadoId) {
-      headers['usuario-mercado-id'] = user.mercadoId;
+    // ✅ CORREÇÃO: Melhorar a leitura dos dados do usuário com logs detalhados
+    const userJson = localStorage.getItem('user');
+    console.log('[APIService] User JSON do localStorage:', userJson);
+    
+    if (userJson) {
+      try {
+        const user = JSON.parse(userJson);
+        console.log('[APIService] User parsed:', user);
+        
+        // Adicionar header gerente-cargo se existir
+        if (user.cargo) {
+          headers['gerente-cargo'] = user.cargo;
+          console.log('[APIService] ✅ Header gerente-cargo adicionado:', user.cargo);
+        } else {
+          console.warn('[APIService] ⚠️ user.cargo não encontrado no localStorage');
+        }
+        
+        // Adicionar header usuario-mercado-id se existir
+        if (user.mercadoId) {
+          headers['usuario-mercado-id'] = user.mercadoId;
+          console.log('[APIService] ✅ Header usuario-mercado-id adicionado:', user.mercadoId);
+        } else {
+          console.warn('[APIService] ⚠️ user.mercadoId não encontrado no localStorage');
+        }
+        
+        // Adicionar header usuario-id se existir
+        if (user.id) {
+          headers['usuario-id'] = user.id;
+          console.log('[APIService] ✅ Header usuario-id adicionado:', user.id);
+        }
+      } catch (error) {
+        console.error('[APIService] ❌ Erro ao fazer parse do user:', error);
+      }
+    } else {
+      console.warn('[APIService] ⚠️ Nenhum user encontrado no localStorage');
     }
 
+    console.log('[APIService] Headers finais que serão enviados:', headers);
     return headers;
   }
 
@@ -71,32 +101,50 @@ class APIService {
     }
 
     try {
-      console.log(`[APIService] ${method} ${url}`);
+      console.log(`[APIService] 🚀 ${method} ${url}`);
+      console.log(`[APIService] 📤 Headers:`, options.headers);
+      if (data) {
+        console.log(`[APIService] 📦 Body:`, data);
+      }
+      
       const response = await fetch(url, options);
 
-      console.log(`[APIService] Response Status: ${response.status} ${response.statusText}`);
+      console.log(`[APIService] 📥 Response Status: ${response.status} ${response.statusText}`);
 
       if (response.status === 401 && this.refreshToken && !this.isRefreshing) {
         console.warn('[APIService] Token expirado, tentando renovar...');
         return this.handleTokenRefresh(method, url, data, customHeaders);
       }
 
-      const result = await response.json().catch(() => ({}));
+      // Tentar ler como JSON, se falhar, ler como texto
+      let result;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json().catch(() => ({}));
+      } else {
+        const text = await response.text();
+        console.warn('[APIService] ⚠️ Resposta não é JSON:', text);
+        result = { message: text };
+      }
 
       if (!response.ok) {
-        console.error(`[APIService] Erro na requisição:`, { status: response.status, result });
+        console.error(`[APIService] ❌ Erro na requisição:`, { 
+          status: response.status, 
+          statusText: response.statusText,
+          result 
+        });
         throw {
           status: response.status,
-          message: result.message || result.error || 'Erro na requisição',
+          message: result.message || result.error || result || 'Erro na requisição',
           data: result,
         };
       }
 
-      console.log(`[API ${method}] ${url}`, { sucesso: true, dados: result.data?.length || 'N/A' });
+      console.log(`[APIService] ✅ ${method} ${url} - Sucesso`);
 
       return result;
     } catch (error) {
-      console.error('Erro na requisição:', { url, method, error });
+      console.error('[APIService] ❌ Erro na requisição:', { url, method, error });
       throw error;
     }
   }
