@@ -19,6 +19,7 @@ class AuthService {
   setUser(user) {
     this.user = user;
     localStorage.setItem('user', JSON.stringify(user));
+    console.log('[AuthService] Usuário salvo no localStorage:', user);
   }
 
   clearUser() {
@@ -42,26 +43,35 @@ class AuthService {
         senha,
       });
 
+      console.log('[AuthService] Resposta do login:', response);
+
       if (response.token) {
         APIService.setTokens(response.token, response.refreshToken);
+        
+        // ✅ CORREÇÃO: Usar os campos corretos que a API retorna
+        // A API retorna: id, email, nomeColaborador, cargo, mercadoId, tipo
         this.setUser({
-          usuarioId: response.usuarioId,
+          id: response.id,                      // ✅ Corrigido: era response.usuarioId
           email: response.email,
-          nomeColaborador: response.nome,
+          nome: response.nomeColaborador,       // ✅ Corrigido: campo correto da API
           cargo: response.cargo,
           mercadoId: response.mercadoId,
+          tipo: response.tipo,                  // ✅ Adicionado: tipo do usuário
+          ativo: response.ativo                 // ✅ Adicionado: status ativo
         });
+
+        console.log('[AuthService] ✅ Login bem-sucedido! Dados salvos:', this.user);
 
         return {
           success: true,
           user: this.user,
-          message: 'Login realizado com sucesso!',
+          message: response.message || 'Login realizado com sucesso!',
         };
       } else {
         throw new Error(response.message || 'Erro ao fazer login');
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('[AuthService] Erro no login:', error);
       return {
         success: false,
         message: error.message || 'Falha na autenticação',
@@ -136,6 +146,10 @@ class AuthService {
 
   isMaster() {
     return this.user?.cargo === 'MASTER';
+  }
+
+  isFuncionario() {
+    return this.user?.cargo === 'FUNCIONARIO';
   }
 }
 
