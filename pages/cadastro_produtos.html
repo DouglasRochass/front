@@ -34,6 +34,7 @@
               <input 
                 type="text" 
                 id="nome_produto" 
+                name="nome"
                 placeholder="Digite o nome do produto" 
                 required
                 aria-required="true"
@@ -44,6 +45,7 @@
               <label for="descricao">Descrição *</label>
               <textarea 
                 id="descricao" 
+                name="descricao"
                 placeholder="Descreva o produto" 
                 rows="3" 
                 required
@@ -56,6 +58,7 @@
               <input 
                 type="text" 
                 id="categoria" 
+                name="categoria"
                 placeholder="Ex: Alimentos, Bebidas" 
                 required
                 aria-required="true"
@@ -89,6 +92,7 @@
               <input 
                 type="number" 
                 id="quantidade" 
+                name="quantidade"
                 placeholder="Ex: 10" 
                 min="0" 
                 required
@@ -99,14 +103,14 @@
             <div class="form-group">
               <label for="preco">Preço (R$) *</label>
               <input 
-                type="number" 
+                type="text" 
                 id="preco" 
-                placeholder="Ex: 25,50" 
-                step="0.01" 
-                min="0.01" 
+                name="preco"
+                placeholder="Ex: 25.50 ou 25,50" 
                 required
                 aria-required="true"
                 aria-label="Preço do produto">
+              <small class="form-help">Use ponto ou vírgula como separador decimal</small>
             </div>
           </fieldset>
 
@@ -176,12 +180,21 @@
         }
       }
 
+      // Função para converter preço (aceita vírgula ou ponto)
+      function parsePreco(valor) {
+        if (!valor) return null;
+        // Remove espaços e substitui vírgula por ponto
+        const valorLimpo = valor.toString().trim().replace(',', '.');
+        const numero = parseFloat(valorLimpo);
+        return isNaN(numero) ? null : numero;
+      }
+
       // Salvar produto
       async function salvarProduto(e) {
         e.preventDefault();
         
         try {
-          // Validar formulário
+          // Validar formulário HTML5
           if (!form.checkValidity()) {
             form.reportValidity();
             return;
@@ -190,15 +203,53 @@
           btnSalvar.disabled = true;
           btnSalvar.textContent = 'Salvando...';
 
-          // Coletar dados
-          const formData = new FormData(form);
+          // Coletar e validar dados
+          const nome = document.getElementById('nome_produto').value.trim();
+          const descricao = document.getElementById('descricao').value.trim();
+          const categoria = document.getElementById('categoria').value.trim();
+          const fornecedorId = parseInt(document.getElementById('fornecedorId').value);
+          const quantidade = parseInt(document.getElementById('quantidade').value);
+          const precoInput = document.getElementById('preco').value;
+          const preco = parsePreco(precoInput);
+
+          // Validações adicionais
+          if (!nome) {
+            Toast.error('Nome do produto é obrigatório');
+            return;
+          }
+
+          if (!descricao) {
+            Toast.error('Descrição é obrigatória');
+            return;
+          }
+
+          if (!categoria) {
+            Toast.error('Categoria é obrigatória');
+            return;
+          }
+
+          if (!fornecedorId || fornecedorId <= 0) {
+            Toast.error('Selecione um fornecedor válido');
+            return;
+          }
+
+          if (isNaN(quantidade) || quantidade < 0) {
+            Toast.error('Quantidade deve ser um número maior ou igual a zero');
+            return;
+          }
+
+          if (preco === null || preco <= 0) {
+            Toast.error('Preço deve ser um número maior que zero. Use ponto ou vírgula como separador decimal.');
+            return;
+          }
+
           const dados = {
-            nome: document.getElementById('nome_produto').value,
-            descricao: document.getElementById('descricao').value,
-            categoria: document.getElementById('categoria').value,
-            fornecedorId: parseInt(document.getElementById('fornecedorId').value),
-            quantidade: parseInt(document.getElementById('quantidade').value),
-            preco: parseFloat(document.getElementById('preco').value),
+            nome,
+            descricao,
+            categoria,
+            fornecedorId,
+            quantidade,
+            preco
           };
 
           console.log('[CadastroProdutos] Enviando dados:', dados);
@@ -215,11 +266,11 @@
             }, 2000);
           } else {
             Toast.error(result.message || 'Erro ao criar produto');
-            console.error('[CadastroProdutos] Erro:', result.error);
+            console.error('[CadastroProdutos] Erro:', result);
           }
         } catch (error) {
           console.error('[CadastroProdutos] Erro ao salvar:', error);
-          Toast.error('Erro ao salvar produto');
+          Toast.error('Erro ao salvar produto: ' + (error.message || 'Erro desconhecido'));
         } finally {
           btnSalvar.disabled = false;
           btnSalvar.textContent = 'Salvar';
