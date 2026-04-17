@@ -32,8 +32,8 @@ class Navbar {
     const hrefClean = href.replace('.html', '').replace('./', '').replace('/', '');
     const currentClean = current.replace('.html', '').replace('/', '');
     const active = currentClean === hrefClean ? 'active' : '';
-    // Usar caminho relativo para páginas
-    const linkHref = `./pages/${href.replace('.html', '')}.html`.replace('.html.html', '.html');
+    // Usar caminho absoluto a partir da raiz
+    const linkHref = `/pages/${href.replace('.html', '')}.html`.replace('.html.html', '.html');
     console.log(`[Navbar Link] ${label}: href="${linkHref}", current="${current}", active="${active}"`);
     return `
       <a href="${linkHref}" class="sidebar-link ${active}">
@@ -107,7 +107,7 @@ class Navbar {
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
         await AuthService.logout();
-        window.location.href = './pages/tela_login.html';
+        window.location.href = '/pages/tela_login.html';
       });
     }
   }
