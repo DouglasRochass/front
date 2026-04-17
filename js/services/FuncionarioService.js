@@ -38,12 +38,14 @@ class FuncionarioService {
 
   async criar(data) {
     try {
+      console.log('[FuncionarioService.criar] Enviando dados:', data);
       const response = await APIService.post(APIConfig.ENDPOINTS.FUNCIONARIOS.CREATE, data);
       console.log('[FuncionarioService.criar] Response:', response);
       return { success: true, data: response.data || response, message: 'Funcionário criado com sucesso' };
     } catch (error) {
       console.error('[FuncionarioService.criar] Erro:', error);
-      return { success: false, message: error.message || 'Erro ao criar funcionário', error };
+      const mensagem = error.response?.data?.message || error.message || 'Erro ao criar funcionário';
+      return { success: false, message: mensagem, error };
     }
   }
 

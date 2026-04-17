@@ -165,6 +165,16 @@ class FormBuilder {
           const formData = new FormData(form);
           const data = Object.fromEntries(formData);
           
+          console.log('[FormBuilder] Dados brutos:', data);
+          
+          // Validar campos obrigatórios
+          const camposObrigatorios = ['nomeColaborador', 'email', 'cpf', 'idade', 'cargos', 'mercadoId'];
+          for (const campo of camposObrigatorios) {
+            if (!data[campo] || data[campo].toString().trim() === '') {
+              throw new Error(`Campo obrigatório "${campo}" não pode estar vazio`);
+            }
+          }
+          
           // Processar campos de checkbox
           form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
             data[checkbox.name] = checkbox.checked;
@@ -172,18 +182,68 @@ class FormBuilder {
           
           // Converter campos numéricos
           form.querySelectorAll('input[type="number"]').forEach(input => {
-            if (input.value) {
-              data[input.name] = parseInt(input.value, 10);
+            if (input.value || input.value === '0') {
+              const valor = Number(input.value);
+              if (isNaN(valor)) {
+                throw new Error(`Campo "${input.name}" deve ser um número válido`);
+              }
+              data[input.name] = valor;
             }
           });
           
-          console.log('[FormBuilder] Dados enviados:', data);
+          // Limpar campos vazios de password na edição
+          if (data.senha === '') {
+            delete data.senha;
+          }
+          
+          // Converter mercadoId para número
+          if (data.mercadoId) {
+            const mercadoId = Number(data.mercadoId);
+            if (isNaN(mercadoId) || mercadoId <= 0) {
+              throw new Error('Mercado deve ser um número válido e maior que 0');
+            }
+            data.mercadoId = mercadoId;
+          }
+          
+          // Limpar CPF de caracteres especiais
+          if (data.cpf) {
+            data.cpf = data.cpf.replace(/\D/g, '');
+            if (data.cpf.length < 11) {
+              throw new Error('CPF deve ter 11 dígitos');
+            }
+          }
+          
+          // Validar email
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(data.email)) {
+            throw new Error('Email inválido');
+          }
+          
+          // Validar idade
+          const idade = Number(data.idade);
+          if (isNaN(idade) || idade < 0 || idade > 150) {
+            throw new Error('Idade deve estar entre 0 e 150');
+          }
+          data.idade = idade;
+          
+          console.log('[FormBuilder] Dados processados e validados:', data);
+          console.log('[FormBuilder] Tipos dos dados:', {
+            nomeColaborador: typeof data.nomeColaborador,
+            cpf: typeof data.cpf,
+            email: typeof data.email,
+            idade: typeof data.idade,
+            cargos: typeof data.cargos,
+            mercadoId: typeof data.mercadoId,
+            senha: typeof data.senha,
+            ativo: typeof data.ativo
+          });
   
           if (this.onSubmit) {
             await this.onSubmit(data);
           }
         } catch (error) {
-          console.error('Erro ao enviar formulário:', error);
+          console.error('[FormBuilder] Erro ao validar formulário:', error);
+          alert('Erro de validação: ' + error.message);
         } finally {
           this.loading = false;
           submitBtn.disabled = false;

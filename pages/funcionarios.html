@@ -135,11 +135,13 @@
                 modal.close();
                 loadFuncionarios();
               } else {
-                Toast.error(result.message);
+                const mensagemErro = result.error?.message || result.message || 'Erro desconhecido ao salvar funcionário';
+                console.error('[showFormModal] Erro:', result);
+                Toast.error(mensagemErro);
               }
             } catch (error) {
               console.error('[showFormModal] Erro ao salvar:', error);
-              Toast.error('Erro ao salvar funcionário');
+              Toast.error(error.message || 'Erro ao salvar funcionário');
             }
           },
         });
