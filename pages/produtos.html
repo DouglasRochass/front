@@ -45,6 +45,7 @@
     import Navbar from '../js/components/Navbar.js';
     import AuthService from '../js/services/AuthService.js';
     import ProdutoService from '../js/services/ProdutoService.js';
+    import FornecedorService from '../js/services/FornecedorService.js';
     import DataTable from '../js/components/DataTable.js';
     import Modal from '../js/components/Modal.js';
     import FormBuilder from '../js/components/FormBuilder.js';
@@ -56,21 +57,49 @@
     navbar.render();
 
     let table = null;
+    let fornecedoresMap = {};
+
+    // Carregar fornecedores para mapear IDs para nomes
+    async function carregarFornecedores() {
+      try {
+        const result = await FornecedorService.listar();
+        if (result.success && result.data) {
+          result.data.forEach(f => {
+            fornecedoresMap[f.id] = f.nome;
+          });
+          console.log('[Produtos] Fornecedores carregados:', fornecedoresMap);
+        }
+      } catch (error) {
+        console.error('[Produtos] Erro ao carregar fornecedores:', error);
+      }
+    }
 
     async function loadProdutos() {
+      // Carregar fornecedores primeiro
+      await carregarFornecedores();
+      
       const result = await ProdutoService.listar();
 
       if (result.success) {
+        // Enriquecer dados dos produtos com nome do fornecedor
+        const produtosEnriquecidos = (result.data || []).map(produto => ({
+          ...produto,
+          fornecedorNome: fornecedoresMap[produto.fornecedorId] || `ID: ${produto.fornecedorId}`,
+          precoFormatado: `R$ ${parseFloat(produto.preco || 0).toFixed(2).replace('.', ',')}`
+        }));
+
+        console.log('[Produtos] Produtos enriquecidos:', produtosEnriquecidos);
+
         table = new DataTable({
           containerId: 'produtos-table',
           columns: [
             { label: 'Nome', field: 'nome' },
-            { label: 'Preço', field: 'preco', format: (v) => `R$ ${parseFloat(v || 0).toFixed(2)}` },
+            { label: 'Preço', field: 'precoFormatado' },
             { label: 'Quantidade', field: 'quantidade' },
-            { label: 'Fornecedor', field: 'fornecedor.nome' },
-            { label: 'Mercado', field: 'mercado.nome' },
+            { label: 'Fornecedor', field: 'fornecedorNome' },
+            { label: 'Categoria', field: 'categoria' },
           ],
-          data: result.data || [],
+          data: produtosEnriquecidos,
           onEdit: isGestor ? editProduto : null,
           onDelete: isGestor ? deleteProduto : null,
           onView: viewProduto,
@@ -87,7 +116,8 @@
     async function editProduto(id) {
       const result = await ProdutoService.obter(id);
       if (result.success) {
-        showFormModal('Editar Produto', result.data, true);
+        // Redirecionar para página de edição ou abrir modal
+        Toast.info('Edição de produto em desenvolvimento');
       } else {
         Toast.error('Erro ao carregar produto');
       }
@@ -106,69 +136,46 @@
     }
 
     function viewProduto(id) {
-      Toast.info(`Visualizando produto ${id}`);
-    }
-
-    function showFormModal(title, data = null, isEdit = false) {
-      const form = new FormBuilder({
-        formId: 'produto-form',
-        title,
-        fields: [
-          { name: 'nome', label: 'Nome', type: 'text', required: true, value: data?.nome || '' },
-          { name: 'descricao', label: 'Descrição', type: 'textarea', value: data?.descricao || '' },
-          { name: 'preco', label: 'Preço', type: 'number', required: true, min: 0.01, value: data?.preco || '' },
-          { name: 'quantidade', label: 'Quantidade', type: 'number', required: true, min: 0, value: data?.quantidade || '' },
-          { name: 'codigoBarras', label: 'Código de Barras', type: 'text', value: data?.codigoBarras || '' },
-          { name: 'sku', label: 'SKU', type: 'text', value: data?.sku || '' },
-        ],
-        submitText: isEdit ? 'Atualizar' : 'Criar',
-        onSubmit: async (formData) => {
-          try {
-            let result;
-            if (isEdit) {
-              result = await ProdutoService.atualizar(data.id, formData);
-            } else {
-              result = await ProdutoService.criar(formData);
-            }
-
-            if (result.success) {
-              Toast.success(result.message);
-              modal.close();
-              loadProdutos();
-            } else {
-              Toast.error(result.message);
-            }
-          } catch (error) {
-            Toast.error('Erro ao salvar produto');
+      // Buscar o produto na lista
+      const produto = table.data.find(p => p.id === id);
+      if (produto) {
+        const detalhes = `
+          <div style="padding: 20px;">
+            <h3>${produto.nome}</h3>
+            <p><strong>Descrição:</strong> ${produto.descricao || 'N/A'}</p>
+            <p><strong>Categoria:</strong> ${produto.categoria || 'N/A'}</p>
+            <p><strong>Preço:</strong> ${produto.precoFormatado}</p>
+            <p><strong>Quantidade:</strong> ${produto.quantidade}</p>
+            <p><strong>Fornecedor:</strong> ${produto.fornecedorNome}</p>
+          </div>
+        `;
+        
+        const modal = new Modal({
+          title: 'Detalhes do Produto',
+          size: 'md',
+        });
+        modal.open();
+        
+        setTimeout(() => {
+          const modalBody = modal.modal?.querySelector('.modal-body');
+          if (modalBody) {
+            modalBody.innerHTML = detalhes;
           }
-        },
-      });
-
-      const modal = new Modal({
-        title,
-        size: 'lg',
-        buttons: [{ text: 'Cancelar', class: 'btn-secondary', onClick: () => modal.close() }],
-      });
-
-      modal.open();
-
-      setTimeout(() => {
-        const modalBody = modal.modal?.querySelector('.modal-body');
-        if (modalBody) {
-          form.render(modalBody);
-        } else {
-          Toast.error('Erro ao abrir formulário');
-        }
-      }, 100);
+        }, 100);
+      }
     }
 
-    document.getElementById('novo-produto-btn').addEventListener('click', () => {
-      if (!isGestor) {
-        Toast.warning('Apenas gerentes podem criar produtos');
-        return;
-      }
-      showFormModal('Novo Produto', null, false);
-    });
+    const btnNovoProduto = document.getElementById('novo-produto-btn');
+    if (btnNovoProduto) {
+      btnNovoProduto.addEventListener('click', () => {
+        if (!isGestor) {
+          Toast.warning('Apenas gerentes podem criar produtos');
+          return;
+        }
+        // Redirecionar para página de cadastro
+        window.location.href = '/pages/cadastro_produtos.html';
+      });
+    }
 
     loadProdutos();
   </script>
