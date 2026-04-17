@@ -45,9 +45,9 @@ class AuthService {
       if (response.token) {
         APIService.setTokens(response.token, response.refreshToken);
         this.setUser({
-          id: response.usuarioId,
+          usuarioId: response.usuarioId,
           email: response.email,
-          nome: response.nome,
+          nomeColaborador: response.nome,
           cargo: response.cargo,
           mercadoId: response.mercadoId,
         });

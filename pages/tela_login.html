@@ -174,16 +174,27 @@
           if (resposta.refreshToken) {
             localStorage.setItem('refresh_token', resposta.refreshToken);
           }
-          // Salvar dados do usuário
-          if (resposta.usuarioId) {
-            localStorage.setItem('user', JSON.stringify({
-              id: resposta.usuarioId,
-              email: resposta.email,
-              nome: resposta.nome,
-              cargo: resposta.cargo,
-              mercadoId: resposta.mercadoId
-            }));
-          }
+          
+          // ✅ CORREÇÃO: Salvar dados do usuário com os campos corretos da API
+          // A API retorna: id, email, nomeColaborador, cargo, mercadoId
+          localStorage.setItem('user', JSON.stringify({
+            id: resposta.id,                          // ✅ Corrigido: era resposta.usuarioId
+            email: resposta.email,
+            nome: resposta.nomeColaborador,           // ✅ Corrigido: era resposta.nome
+            cargo: resposta.cargo,                    // ✅ Correto
+            mercadoId: resposta.mercadoId,            // ✅ Correto
+            tipo: resposta.tipo                       // ✅ Adicionado: tipo do usuário
+          }));
+          
+          console.log('[Login] Dados do usuário salvos:', {
+            id: resposta.id,
+            email: resposta.email,
+            nome: resposta.nomeColaborador,
+            cargo: resposta.cargo,
+            mercadoId: resposta.mercadoId,
+            tipo: resposta.tipo
+          });
+          
           apiService.token = resposta.token;
           
           exibirMensagem('Login realizado com sucesso!', 'sucesso');
