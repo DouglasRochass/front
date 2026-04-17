@@ -48,9 +48,12 @@ class FormBuilder {
         return `<input type="hidden" name="${field.name}" value="${field.value || ''}">`;
       }
   
+      // Para checkboxes simples, não renderizar a label padrão
+      const skipLabel = field.type === 'checkbox' && (!field.options || field.options.length === 0);
+      
       html += `
         <div class="form-group">
-          ${field.label ? `<label for="${field.name}">${field.label}${field.required ? '*' : ''}</label>` : ''}
+          ${!skipLabel && field.label ? `<label for="${field.name}">${field.label}${field.required ? '*' : ''}</label>` : ''}
       `;
   
       const attributes = this.buildAttributes(field);
@@ -84,16 +87,21 @@ class FormBuilder {
           break;
   
         case 'checkbox':
-          html += `
-            <div class="checkbox-group">
-              ${(field.options || []).map(opt => `
-                <label class="checkbox-label">
-                  <input type="checkbox" name="${field.name}" value="${opt.value}" />
-                  ${opt.label}
-                </label>
-              `).join('')}
-            </div>
-          `;
+          if (field.options && field.options.length > 0) {
+            html += `
+              <div class="checkbox-group">
+                ${(field.options || []).map(opt => `
+                  <label class="checkbox-label">
+                    <input type="checkbox" name="${field.name}" value="${opt.value}" />
+                    ${opt.label}
+                  </label>
+                `).join('')}
+              </div>
+            `;
+          } else {
+            // Checkbox simples (boolean) - label será renderizada fora
+            html += `<input type="checkbox" name="${field.name}" value="true" ${field.value ? 'checked' : ''} />`;
+          }
           break;
   
         case 'radio':
@@ -156,6 +164,20 @@ class FormBuilder {
         try {
           const formData = new FormData(form);
           const data = Object.fromEntries(formData);
+          
+          // Processar campos de checkbox
+          form.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            data[checkbox.name] = checkbox.checked;
+          });
+          
+          // Converter campos numéricos
+          form.querySelectorAll('input[type="number"]').forEach(input => {
+            if (input.value) {
+              data[input.name] = parseInt(input.value, 10);
+            }
+          });
+          
+          console.log('[FormBuilder] Dados enviados:', data);
   
           if (this.onSubmit) {
             await this.onSubmit(data);
