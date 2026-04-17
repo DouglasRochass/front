@@ -211,7 +211,7 @@
             
             // Redirecionar para lista de produtos após 2 segundos
             setTimeout(() => {
-              window.location.href = '/produtos';
+              window.location.href = './produtos.html';
             }, 2000);
           } else {
             Toast.error(result.message || 'Erro ao criar produto');
@@ -229,7 +229,7 @@
       // Cancelar
       function cancelarCadastro() {
         if (confirm('Deseja cancelar o cadastro?')) {
-          window.location.href = '/produtos';
+          window.location.href = './produtos.html';
         }
       }
 

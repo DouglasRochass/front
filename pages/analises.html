@@ -10,7 +10,7 @@
     (function() {
       const token = localStorage.getItem('access_token');
       if (!token || token.trim() === '') {
-        window.location.replace('/login');
+        window.location.replace('./tela_login.html');
       }
     })();
   </script>
