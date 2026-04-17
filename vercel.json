@@ -4,6 +4,10 @@
   "outputDirectory": ".",
   "routes": [
     {
+      "src": "/logo.png",
+      "dest": "/logo.png"
+    },
+    {
       "src": "/pages/(.*)",
       "dest": "/pages/$1"
     },
@@ -21,6 +25,10 @@
     },
     {
       "src": "/(.*\\.html)",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*\\.css)",
       "dest": "/$1"
     },
     {
