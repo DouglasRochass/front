@@ -19,18 +19,18 @@ class Navbar {
     navbar.innerHTML = `
       <div class="navbar-container">
         <div class="navbar-brand">
-          <img src="/logo.png" alt="SmartStock" class="navbar-logo">
+          <img src="../logo.png" alt="SmartStock" class="navbar-logo">
           <span class="navbar-title">SmartStock</span>
         </div>
 
         <div class="navbar-menu">
-          <a href="/dashboard.html" class="nav-link">Dashboard</a>
-          <a href="/produtos.html" class="nav-link">Produtos</a>
-          <a href="/fornecedores.html" class="nav-link">Fornecedores</a>
-          <a href="/funcionarios.html" class="nav-link">Funcionários</a>
-          <a href="/mercados.html" class="nav-link">Mercados</a>
-          <a href="/vendas.html" class="nav-link">Vendas</a>
-          <a href="/relatorios.html" class="nav-link">Relatórios</a>
+          <a href="./dashboard.html" class="nav-link">Dashboard</a>
+          <a href="./produtos.html" class="nav-link">Produtos</a>
+          <a href="./fornecedores.html" class="nav-link">Fornecedores</a>
+          <a href="./funcionarios.html" class="nav-link">Funcionários</a>
+          <a href="./mercados.html" class="nav-link">Mercados</a>
+          <a href="./vendas.html" class="nav-link">Vendas</a>
+          <a href="./analises.html" class="nav-link">Análises</a>
         </div>
 
         <div class="navbar-end">
@@ -39,8 +39,8 @@ class Navbar {
             <div class="dropdown">
               <button class="dropdown-toggle">⋮</button>
               <ul class="dropdown-menu">
-                <li><a href="/perfil.html">Meu Perfil</a></li>
-                <li><a href="/configuracoes.html">Configurações</a></li>
+                <li><a href="#perfil">Meu Perfil</a></li>
+                <li><a href="#config">Configurações</a></li>
                 <li class="divider"></li>
                 <li><button id="logout-btn" class="logout-btn">Sair</button></li>
               </ul>

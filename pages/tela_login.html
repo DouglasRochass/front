@@ -8,7 +8,7 @@
   <script>
     // Se já está autenticado, redirecionar para dashboard
     if (localStorage.getItem('access_token')) {
-      window.location.href = '/';
+      window.location.href = '/pages/dashboard.html';
     }
   </script>
   <style>
@@ -191,7 +191,7 @@
           
           setTimeout(() => {
             console.log('[Login] Iniciando redirecionamento...');
-            window.location.href = '/';
+            window.location.href = '/pages/dashboard.html';
           }, 1500);
         });
       }

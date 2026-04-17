@@ -30,14 +30,14 @@
   // Se está em página pública e já tem token, redirecionar para dashboard
   if (isPublicPage && hasToken) {
     console.log('[Auth Check] Usuário autenticado em página pública, redirecionando para dashboard...');
-    setTimeout(() => { window.location.href = '/'; }, 100);
+    setTimeout(() => { window.location.href = '/pages/dashboard.html'; }, 100);
     return;
   }
 
   // Se está em página protegida e não tem token, redirecionar para login
   if (!isPublicPage && !hasToken) {
     console.log('[Auth Check] Usuário não autenticado, redirecionando para login...');
-    setTimeout(() => { window.location.href = '/login'; }, 100);
+    setTimeout(() => { window.location.href = '/pages/tela_login.html'; }, 100);
     return;
   }
 

@@ -11,7 +11,7 @@
       const token = localStorage.getItem('access_token');
       if (!token || token.trim() === '') {
         console.log('[Dashboard] Sem token, redirecionando para login...');
-        window.location.replace('/login');
+        window.location.replace('/pages/tela_login.html');
       }
     })();
   </script>

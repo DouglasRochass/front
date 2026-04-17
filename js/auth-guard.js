@@ -9,7 +9,7 @@ class AuthGuard {
   static checkAuthentication() {
     if (!AuthService.isAuthenticated()) {
       console.warn('[AuthGuard] Usuário não autenticado, redirecionando para login...');
-      window.location.href = '/login';
+      window.location.href = '/pages/tela_login.html';
       return false;
     }
     console.log('[AuthGuard] ✓ Usuário autenticado');
@@ -19,7 +19,7 @@ class AuthGuard {
   static checkAuthenticationFromLogin() {
     if (AuthService.isAuthenticated()) {
       console.log('[AuthGuard] Usuário já autenticado, redirecionando para dashboard...');
-      window.location.href = '/';
+      window.location.href = '/pages/dashboard.html';
       return false;
     }
     console.log('[AuthGuard] ✓ Usuário não autenticado (esperado na página de login)');
