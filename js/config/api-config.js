@@ -4,7 +4,7 @@
 
 class APIConfig {
   static get BASE_URL() {
-    return import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    return import.meta.env.VITE_API_URL || 'https://smart-ckv7.onrender.com/api';
   }
 
   static ENDPOINTS = {

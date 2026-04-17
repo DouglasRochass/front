@@ -4,7 +4,7 @@
 
 class APIConfig {
   static get BASE_URL() {
-    return 'http://localhost:8080/api';
+    return 'https://smart-ckv7.onrender.com/api';
   }
 
   static ENDPOINTS = {
