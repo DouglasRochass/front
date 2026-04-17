@@ -167,9 +167,10 @@ class FormBuilder {
           
           console.log('[FormBuilder] Dados brutos:', data);
           
-          // Validar campos obrigatórios
-          const camposObrigatorios = ['nomeColaborador', 'email', 'cpf', 'idade', 'cargos', 'mercadoId'];
-          for (const campo of camposObrigatorios) {
+          // ✅ CORREÇÃO: Validar apenas campos que existem no formulário
+          // Remover validação hardcoded de campos específicos de funcionários
+          const camposRequiridos = this.fields.filter(f => f.required).map(f => f.name);
+          for (const campo of camposRequiridos) {
             if (!data[campo] || data[campo].toString().trim() === '') {
               throw new Error(`Campo obrigatório "${campo}" não pode estar vazio`);
             }
@@ -196,7 +197,7 @@ class FormBuilder {
             delete data.senha;
           }
           
-          // Converter mercadoId para número
+          // Converter mercadoId para número (se existir)
           if (data.mercadoId) {
             const mercadoId = Number(data.mercadoId);
             if (isNaN(mercadoId) || mercadoId <= 0) {
@@ -205,7 +206,7 @@ class FormBuilder {
             data.mercadoId = mercadoId;
           }
           
-          // Limpar CPF de caracteres especiais
+          // Limpar CPF de caracteres especiais (se existir)
           if (data.cpf) {
             data.cpf = data.cpf.replace(/\D/g, '');
             if (data.cpf.length < 11) {
@@ -213,30 +214,32 @@ class FormBuilder {
             }
           }
           
-          // Validar email
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(data.email)) {
-            throw new Error('Email inválido');
+          // Limpar CNPJ de caracteres especiais (se existir)
+          if (data.cnpj) {
+            data.cnpj = data.cnpj.replace(/\D/g, '');
+            if (data.cnpj.length < 14) {
+              throw new Error('CNPJ deve ter 14 dígitos');
+            }
           }
           
-          // Validar idade
-          const idade = Number(data.idade);
-          if (isNaN(idade) || idade < 0 || idade > 150) {
-            throw new Error('Idade deve estar entre 0 e 150');
+          // Validar email (se existir)
+          if (data.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(data.email)) {
+              throw new Error('Email inválido');
+            }
           }
-          data.idade = idade;
+          
+          // Validar idade (se existir)
+          if (data.idade !== undefined && data.idade !== '') {
+            const idade = Number(data.idade);
+            if (isNaN(idade) || idade < 0 || idade > 150) {
+              throw new Error('Idade deve estar entre 0 e 150');
+            }
+            data.idade = idade;
+          }
           
           console.log('[FormBuilder] Dados processados e validados:', data);
-          console.log('[FormBuilder] Tipos dos dados:', {
-            nomeColaborador: typeof data.nomeColaborador,
-            cpf: typeof data.cpf,
-            email: typeof data.email,
-            idade: typeof data.idade,
-            cargos: typeof data.cargos,
-            mercadoId: typeof data.mercadoId,
-            senha: typeof data.senha,
-            ativo: typeof data.ativo
-          });
   
           if (this.onSubmit) {
             await this.onSubmit(data);
