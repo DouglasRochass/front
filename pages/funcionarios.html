@@ -15,18 +15,28 @@
     })();
   </script>
   <style>
+    .page-container { padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl); }
+    .page-header h1 { font-size: 1.875rem; }
+    .table-wrapper { background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; font-weight: 500; }
+    .badge-success { background-color: #d4edda; color: #155724; }
+    .badge-danger { background-color: #f8d7da; color: #721c24; }
   </style>
 </head>
 <body>
   <nav id="navbar"></nav>
 
-  <div style="padding: var(--spacing-lg); max-width: 1400px; margin: 0 auto;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl);">
-      <h1 style="font-size: 1.875rem;">Funcionários</h1>
+  <div class="page-container">
+    <div class="page-header">
+      <div>
+        <h1>Funcionários</h1>
+        <p class="text-muted">Gerenciar equipe de colaboradores</p>
+      </div>
       <button class="btn btn-primary" id="novo-funcionario-btn">+ Novo Funcionário</button>
     </div>
 
-    <div style="background: white; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden;">
+    <div class="table-wrapper">
       <div id="funcionarios-table"></div>
     </div>
   </div>
@@ -46,28 +56,76 @@
 
     let table = null;
     let mercadosOptions = [];
+    let mercadosMap = {};
+
+    // Mapa de tradução de cargos
+    const cargosMap = {
+      'FUNCIONARIO': 'Funcionário',
+      'GERENTE': 'Gerente',
+      'MASTER': 'Master'
+    };
 
     async function carregarMercados() {
-      const result = await MercadoService.listar();
-      if (result.success && result.data) {
-        mercadosOptions = result.data.map(m => ({ value: String(m.id), label: m.nome }));
+      try {
+        const result = await MercadoService.listar();
+        if (result.success && result.data) {
+          mercadosOptions = result.data.map(m => ({ value: String(m.id), label: m.nome }));
+          result.data.forEach(m => {
+            mercadosMap[m.id] = m.nome;
+          });
+          console.log('[Funcionarios] Mercados carregados:', mercadosMap);
+        }
+      } catch (error) {
+        console.error('[Funcionarios] Erro ao carregar mercados:', error);
       }
     }
 
     async function loadFuncionarios() {
+      // Carregar mercados primeiro
+      await carregarMercados();
+      
       const result = await FuncionarioService.listar();
 
       if (result.success) {
+        // Enriquecer dados dos funcionários
+        const funcionariosEnriquecidos = (result.data || []).map(func => {
+          // O backend pode retornar 'nomeColaborador' ou 'nome'
+          const nome = func.nomeColaborador || func.nome || 'N/A';
+          
+          // O backend pode retornar 'cargos' (enum) ou 'cargo' (string)
+          const cargoRaw = func.cargos || func.cargo || 'FUNCIONARIO';
+          const cargo = cargosMap[cargoRaw] || cargoRaw;
+          
+          // Buscar nome do mercado
+          const mercadoNome = mercadosMap[func.mercadoId] || `ID: ${func.mercadoId}`;
+          
+          // Status formatado
+          const ativo = func.ativo !== false;
+          const statusHtml = ativo 
+            ? '<span class="badge badge-success">Ativo</span>' 
+            : '<span class="badge badge-danger">Inativo</span>';
+
+          return {
+            ...func,
+            nomeExibicao: nome,
+            cargoExibicao: cargo,
+            mercadoNome: mercadoNome,
+            statusHtml: statusHtml
+          };
+        });
+
+        console.log('[Funcionarios] Funcionários enriquecidos:', funcionariosEnriquecidos);
+
         table = new DataTable({
           containerId: 'funcionarios-table',
           columns: [
-            { label: 'Nome', field: 'nome' },
+            { label: 'Nome', field: 'nomeExibicao' },
             { label: 'Email', field: 'email' },
-            { label: 'Cargo', field: 'cargo' },
-            { label: 'Mercado', field: 'mercado.nome' },
-            { label: 'Status', field: 'status' },
+            { label: 'Cargo', field: 'cargoExibicao' },
+            { label: 'Mercado', field: 'mercadoNome' },
+            { label: 'Status', field: 'statusHtml', isHtml: true },
           ],
-          data: result.data || [],
+          data: funcionariosEnriquecidos,
           onEdit: editFuncionario,
           onDelete: deleteFuncionario,
           pageSize: 10,
@@ -87,7 +145,7 @@
     }
 
     async function deleteFuncionario(id) {
-      if (confirm('Tem certeza?')) {
+      if (confirm('Tem certeza que deseja deletar este funcionário?')) {
         const result = await FuncionarioService.deletar(id);
         if (result.success) {
           Toast.success(result.message);
@@ -110,14 +168,14 @@
             { name: 'idade', label: 'Idade', type: 'number', required: true, value: data?.idade || '' },
             { name: 'cargos', label: 'Cargo', type: 'select', required: true,
               options: [
-                { value: 'GERENTE', label: 'Gerente' },
                 { value: 'FUNCIONARIO', label: 'Funcionário' },
+                { value: 'GERENTE', label: 'Gerente' },
               ],
               value: data?.cargos || data?.cargo || '' },
             { name: 'mercadoId', label: 'Mercado', type: 'select', required: true,
               options: mercadosOptions,
               value: data?.mercadoId ? String(data.mercadoId) : '' },
-            { name: 'senha', label: 'Senha', type: 'password', required: !isEdit, value: data?.senha || '' },
+            { name: 'senha', label: 'Senha', type: 'password', required: !isEdit, value: '' },
             { name: 'ativo', label: 'Ativo', type: 'checkbox', value: data?.ativo !== false },
           ],
           submitText: isEdit ? 'Atualizar' : 'Criar',
@@ -168,7 +226,6 @@
       btnNovoFuncionario.addEventListener('click', () => showFormModal('Novo Funcionário', null, false));
     }
 
-    await carregarMercados();
     loadFuncionarios();
   </script>
 </body>
